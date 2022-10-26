@@ -1,0 +1,54 @@
+﻿
+/**
+ * AUTO GENERATE BY UI EDITOR.
+ * WARNING: DO NOT MODIFY THIS FILE,MAY CAUSE CODE LOST.
+ * AUTHOR: ${Author}
+ * UI: ${UIPath}
+ * TIME: ${Time}
+ */
+
+ ${Import}
+
+ @UI.UICallOnly('${UIPath}')
+ export default class ${ClassName}_Generate extends ${SuperClassName} {
+	 ${Fileds}
+ 
+	protected initButtons() {
+		//按钮添加点击
+		${StaleButton_Start}
+		this.${StaleButton}.onClicked.add(()=>{
+			Events.dispatchLocal("PlayButtonClick", "${StaleButton}");
+		})
+		this.initLanguage(this.${StaleButton});
+		this.${StaleButton}.touchMethod = (UI.ButtonTouchMethod.PreciseTap);
+		${StaleButton_End}
+		//按钮添加点击
+		${Button_Start}
+		this.${Button}.onClicked.add(()=>{
+			Events.dispatchLocal("PlayButtonClick", "${Button}");
+		})
+		this.${Button}.touchMethod = (UI.ButtonTouchMethod.PreciseTap);
+		${Button_End}
+
+		//按钮多语言
+		${StaleButton_HideStart}
+		this.initLanguage(this.rootcanvas.findChildByPath("${StaleButton_Path}") as any);
+		${StaleButton_HideEnd}
+		//文本多语言
+		${TextBlock_Start}
+		this.initLanguage(this.${TextBlock})
+		${TextBlock_End}
+		//文本多语言
+		${TextBlock_HideStart}
+		this.initLanguage(this.rootcanvas.findChildByPath("${TextBlock_Path}") as any);
+		${TextBlock_HideEnd}
+
+	}
+	private initLanguage(ui: UI.StaleButton | UI.TextBlock) {
+        let call = UI.UIBehaviour.getBehaviour("lan");
+        if (call && ui) {
+            call(ui);
+        }
+    }
+ }
+ 
