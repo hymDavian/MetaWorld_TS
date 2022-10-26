@@ -1,5 +1,5 @@
-import { Datacenter } from "../../Data/Datacenter";
-import { NetManager, NetModuleBase } from "../../Tools/NetManager";
+import { Datacenter } from "../../TQ/tqBase/Datacenter";
+import { NetManager, NetModuleBase } from "../../TQ/CommonLogic/NetManager";
 import { BuildingData } from "./BuildingData";
 
 type objType = {

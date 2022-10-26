@@ -1,8 +1,13 @@
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __commonJS = (cb, mod) => function __require() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -15,6 +20,7 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var __decorateClass = (decorators, target, key, kind) => {
   var result = kind > 1 ? void 0 : kind ? __getOwnPropDesc(target, key) : target;
@@ -30,12 +36,523 @@ var __publicField = (obj, key, value) => {
   return value;
 };
 
+// JavaScripts/CommonLogic/BackpackModule.ts
+var require_BackpackModule = __commonJS({
+  "JavaScripts/CommonLogic/BackpackModule.ts"() {
+  }
+});
+
+// JavaScripts/Tools/ArrayExtFunc.ts
+var require_ArrayExtFunc = __commonJS({
+  "JavaScripts/Tools/ArrayExtFunc.ts"() {
+    if (!Array.prototype.add) {
+      Object.defineProperty(Array.prototype, "add", {
+        value(item) {
+          this.push(item);
+          return this;
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.remove) {
+      Object.defineProperty(Array.prototype, "remove", {
+        value(key, value) {
+          let i = value === void 0 ? this.indexOf(key) : this.findIndex((m) => m[key] === value);
+          return i === -1 ? null : this.splice(i, 1)[0];
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.first) {
+      Object.defineProperty(Array.prototype, "first", {
+        value(count) {
+          if (count == void 0) {
+            if (this.length > 0) {
+              return this[0];
+            } else
+              return null;
+          } else {
+            var ret = [];
+            for (var i = 0; i < Math.min(count, this.length); i++) {
+              ret.add(this[i]);
+            }
+            return ret;
+          }
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.last) {
+      Object.defineProperty(Array.prototype, "last", {
+        value() {
+          return this[this.length - 1];
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.has) {
+      Object.defineProperty(Array.prototype, "has", {
+        value(key, value) {
+          return value !== void 0 ? this.some((m) => m[key] === value) : this.indexOf(key) !== -1;
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.set) {
+      Object.defineProperty(Array.prototype, "set", {
+        value(arr) {
+          this.clear();
+          return this.addRange(arr);
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.random) {
+      Object.defineProperty(Array.prototype, "random", {
+        value(count, isReturnArray) {
+          if (count == null || count == 1) {
+            if (this.length === 0) {
+              return void 0;
+            }
+            let randomValue = this[Math.floor(Math.random() * this.length)];
+            if (isReturnArray) {
+              return [randomValue];
+            }
+            return randomValue;
+          } else if (count > this.length) {
+            return this;
+          } else {
+            var shuffled = this.slice(0);
+            var i = this.length, min = i - count, temp, index;
+            while (i-- > min) {
+              index = Math.floor((i + 1) * Math.random());
+              temp = shuffled[index];
+              shuffled[index] = shuffled[i];
+              shuffled[i] = temp;
+            }
+            return shuffled.slice(min);
+          }
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.randomByProp) {
+      Object.defineProperty(Array.prototype, "randomByProp", {
+        value(prop) {
+          prop = prop ? prop : "weight";
+          let count = 0;
+          this.map((item) => {
+            if (typeof item[prop] === "number") {
+              count += item[prop];
+            }
+          });
+          let rd = Math.floor(Math.random() * count);
+          let tempCount = 0;
+          for (const element of this) {
+            let weight = element[prop];
+            if (typeof element[prop] === "number") {
+              tempCount += weight;
+              if (tempCount > rd) {
+                return element;
+              }
+            }
+          }
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.randomIndex) {
+      Object.defineProperty(Array.prototype, "randomIndex", {
+        value() {
+          let count = 0;
+          this.map((item) => {
+            if (typeof item === "number") {
+              count += item;
+            }
+          });
+          let rd = Math.floor(Math.random() * count);
+          let tempCount = 0;
+          for (let i = 0; i < this.length; i++) {
+            const element = this[i];
+            if (typeof element === "number") {
+              tempCount += element;
+              if (tempCount > rd) {
+                return i;
+              }
+            }
+          }
+        },
+        enumerable: false
+      });
+    }
+    if (!Array.prototype.randomRemove) {
+      Object.defineProperty(Array.prototype, "randomRemove", {
+        value() {
+          let index = this.randomIndex();
+          let result = this[index];
+          this.remove(index, 1);
+          return result;
+        },
+        enumerable: false
+      });
+    }
+  }
+});
+
 // build.ts
 var build_exports = {};
 __export(build_exports, {
   MWModuleMap: () => MWModuleMap
 });
 module.exports = __toCommonJS(build_exports);
+var foreign1 = __toESM(require_BackpackModule());
+
+// JavaScripts/CommonLogic/NetManager.ts
+var NetManager_exports = {};
+__export(NetManager_exports, {
+  NetManager: () => NetManager,
+  NetModuleBase: () => NetModuleBase
+});
+var NetManager;
+((NetManager2) => {
+  const netInstanceObj = /* @__PURE__ */ new Map();
+  const EVENT_NETMGR_SEND_SERVER = "EVENT_NETMGR_SEND_SERVER";
+  const EVENT_NETMGR_SEND_CLIENT = "EVENT_NETMGR_SEND_CLIENT";
+  const EVENT_NETMGR_PLAYERENTER = "EVENT_NETMGR_PLAYERENTER";
+  const netRegistFunc = /* @__PURE__ */ new Map();
+  class sendClientPackage {
+    data;
+    cmdid;
+    errorid;
+  }
+  class sendServerPackage {
+    data;
+    cmdid;
+    pid;
+  }
+  const errorMap = /* @__PURE__ */ new Map();
+  function setErrorTips(errorid, tips) {
+    if (Gameplay.isClient()) {
+      errorMap.set(errorid, { errorid, act: tips });
+    }
+  }
+  NetManager2.setErrorTips = setErrorTips;
+  function sendNet(cmd, data, pid, errorid = 0) {
+    if (Gameplay.isServer()) {
+      let net = {
+        errorid,
+        data,
+        cmdid: cmd
+      };
+      if (pid) {
+        let p = Gameplay.getPlayer(pid);
+        if (p) {
+          Events.dispatchToClient(p, EVENT_NETMGR_SEND_CLIENT, net);
+        } else {
+          console.error("not find player:" + pid);
+        }
+      } else {
+        Events.dispatchToAllClient(EVENT_NETMGR_SEND_CLIENT, net);
+      }
+    }
+    if (Gameplay.isClient()) {
+      let locPlayer = Gameplay.getCurrentPlayer();
+      if (!locPlayer) {
+        console.error("current player notFind !");
+        return;
+      }
+      let net = {
+        data,
+        cmdid: cmd,
+        pid: locPlayer.getPlayerID()
+      };
+      Events.dispatchToServer(EVENT_NETMGR_SEND_SERVER, net);
+    }
+  }
+  NetManager2.sendNet = sendNet;
+  function initNetMgr() {
+    if (Gameplay.isServer()) {
+      Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p, net) => {
+        const netFunc = netRegistFunc.get(net.cmdid);
+        if (netFunc) {
+          for (let f of netFunc) {
+            let obj = netInstanceObj.get(f.objType);
+            if (!obj) {
+              continue;
+            }
+            try {
+              f.func.call(obj, net.pid, ...net.data);
+            } catch (error) {
+              console.error("net response error!");
+              console.error(error.stack);
+            }
+          }
+        }
+      });
+      Events.addClientListener(EVENT_NETMGR_PLAYERENTER, (p) => {
+        for (let [k, v] of netInstanceObj) {
+          v["playerEnter"](p.getPlayerID());
+        }
+      });
+    }
+    if (Gameplay.isClient()) {
+      Events.addServerListener(EVENT_NETMGR_SEND_CLIENT, (net) => {
+        if (errorMap.has(net.errorid)) {
+          let tip = errorMap.get(net.errorid);
+          if (typeof tip.act == "string") {
+            console.log(tip);
+          } else {
+            tip.act(net.errorid);
+          }
+        }
+        const netFunc = netRegistFunc.get(net.cmdid);
+        if (netFunc) {
+          for (let f of netFunc) {
+            let obj = netInstanceObj.get(f.objType);
+            if (!obj) {
+              continue;
+            }
+            try {
+              f.func.call(obj, ...net.data);
+            } catch (error) {
+              console.error("net response error!");
+              console.error(error.stack);
+            }
+          }
+        }
+      });
+    }
+    for (let [k, v] of netInstanceObj) {
+      v["start"]();
+    }
+    if (Gameplay.isClient()) {
+      Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);
+    }
+  }
+  NetManager2.initNetMgr = initNetMgr;
+  let time = 0;
+  function update() {
+    const now = Date.now();
+    if (time == 0) {
+      time = now;
+    }
+    ;
+    for (let [k, v] of netInstanceObj) {
+      v["update"](now - time);
+    }
+    time = now;
+  }
+  NetManager2.update = update;
+  function netFlagClass(constructor) {
+    const netObj = new constructor();
+    netInstanceObj.set(constructor.name, netObj);
+  }
+  NetManager2.netFlagClass = netFlagClass;
+  function netFlagFunc(cmdid) {
+    return function(target, propertyRey, description) {
+      if (!description.value || typeof description.value != "function") {
+        return;
+      }
+      const className = target.constructor.name;
+      const func = description.value;
+      if (!netRegistFunc.has(cmdid)) {
+        netRegistFunc.set(cmdid, new Array());
+      }
+      let f = {
+        objType: className,
+        func,
+        cmdid
+      };
+      netRegistFunc.get(cmdid).push(f);
+    };
+  }
+  NetManager2.netFlagFunc = netFlagFunc;
+  function getModule(cls) {
+    if (netInstanceObj.has(cls.name)) {
+      return netInstanceObj.get(cls.name);
+    }
+    return null;
+  }
+  NetManager2.getModule = getModule;
+})(NetManager || (NetManager = {}));
+var NetModuleBase = class {
+  isServer = true;
+  constructor() {
+    this.isServer = Gameplay.isServer();
+    this.onAwake();
+  }
+  onAwake() {
+  }
+  start() {
+    this.onStart();
+  }
+  update(dt) {
+    this.onUpdate(dt);
+  }
+  playerEnter(pid) {
+    this.onPlayerEnter(pid);
+  }
+  onPlayerEnter(pid) {
+  }
+};
+
+// JavaScripts/CommonLogic/RankLogic.ts
+var RankLogic_exports = {};
+__export(RankLogic_exports, {
+  RankLogic: () => RankLogic
+});
+var EVENT_RANK_REP = "EVENT_RANK_REP";
+var EVENT_RANK_REQ = "EVENT_RANK_REQ";
+var RankLogic = class {
+  C2S = true;
+  infoTypeName = null;
+  sortBasis = [];
+  constructor(infoName, isC2S = true) {
+    this.infoTypeName = infoName.name;
+    this.C2S = isC2S;
+    this.clientInit();
+    this.serverInit();
+  }
+  uiAct = null;
+  dataAct = null;
+  clientInit() {
+    let eventFunc = this.C2S ? Events.addServerListener : Events.addLocalListener;
+    eventFunc(`${EVENT_RANK_REP}_${this.infoTypeName}`, (infos) => {
+      if (this.uiAct) {
+        if (this.sortBasis.length > 0) {
+          infos.sort((a, b) => {
+            for (let i = 0; i < this.sortBasis.length; i++) {
+              const isUp = this.sortBasis[i][2];
+              const ka = this.sortBasis[i][0];
+              const kb = this.sortBasis[i][0];
+              if (a[ka] == null || a[ka] == void 0 || b[kb] == null || b[kb] == void 0) {
+                continue;
+              }
+              if (a[ka] == b[kb]) {
+                continue;
+              }
+              let [na, nb] = [Number(a[ka]), Number(b[kb])];
+              if (Number.isNaN(na) || Number.isNaN(nb)) {
+                continue;
+              }
+              return isUp ? nb - na : na - nb;
+            }
+            return 0;
+          });
+        }
+        this.uiAct(infos);
+      }
+    });
+  }
+  serverInit() {
+    if (this.C2S) {
+      Events.addClientListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, (player) => {
+        this.sendRank(player);
+      });
+    } else {
+      Events.addLocalListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, () => {
+        let data = this.dataAct ? this.dataAct() : [];
+        Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+      });
+    }
+  }
+  requestRank() {
+    if (Gameplay.isClient()) {
+      if (this.C2S) {
+        Events.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
+      } else {
+        Events.dispatchLocal(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
+      }
+    }
+  }
+  sendRank(pid, data) {
+    if (!data) {
+      data = this.dataAct ? this.dataAct() : [];
+    }
+    if (data.length <= 0) {
+      return;
+    }
+    if (this.C2S && Gameplay.isServer()) {
+      let p = pid instanceof Gameplay.Player ? pid : Gameplay.getPlayer(pid);
+      Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+    } else {
+      Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+    }
+  }
+  sendAllRank(data) {
+    if (!this.C2S || Gameplay.isClient()) {
+      return;
+    }
+    if (!data) {
+      data = this.dataAct ? this.dataAct() : [];
+    }
+    Gameplay.getAllPlayers().forEach((p) => {
+      Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+    });
+  }
+  setClientAction(action) {
+    this.uiAct = action;
+  }
+  setCreateData(action) {
+    this.dataAct = action;
+  }
+  setSortBasis(...basis) {
+    this.sortBasis.length = 0;
+    basis.sort((a, b) => {
+      return b[1] - a[1];
+    });
+    this.sortBasis.push(...basis);
+  }
+};
+
+// JavaScripts/CommonLogic/RewardModule.ts
+var RewardModule_exports = {};
+__export(RewardModule_exports, {
+  rewardLogic: () => rewardLogic
+});
+var rewardLogic;
+((rewardLogic2) => {
+  const EVENT_RECEIVE_REWARD = "EVENT_RECEIVE_REWARD";
+  let getLog = false;
+  let actions_C = /* @__PURE__ */ new Map();
+  let actions_S = /* @__PURE__ */ new Map();
+  function setReceiveFunc(cmd, act) {
+    let map = Gameplay.isClient() ? actions_C : actions_S;
+    if (!map.has(cmd)) {
+      map.set(cmd, []);
+    }
+    map.get(cmd).push(act);
+  }
+  rewardLogic2.setReceiveFunc = setReceiveFunc;
+  function initRewardAct(log = false) {
+    if (Gameplay.isClient()) {
+      Events.addServerListener(EVENT_RECEIVE_REWARD, doRewardAction);
+    }
+    getLog = log;
+  }
+  rewardLogic2.initRewardAct = initRewardAct;
+  function sendReward(pid, cmd, ...items) {
+    if (Gameplay.isClient()) {
+      return;
+    }
+    doRewardAction(pid, cmd, items);
+    Events.dispatchToClient(Gameplay.getPlayer(pid), EVENT_RECEIVE_REWARD, pid, cmd, items);
+  }
+  rewardLogic2.sendReward = sendReward;
+  function doRewardAction(pid, ty, rws) {
+    if (getLog) {
+      console.log(`
+${pid} \u6536\u5230\u5956\u52B1\u7C7B\u578B ${ty} :
+ ${JSON.stringify(rws)}`);
+    }
+    let map = Gameplay.isClient() ? actions_C : actions_S;
+    if (map.has(ty)) {
+      map.get(ty).forEach((act) => {
+        act(pid, rws);
+      });
+    }
+  }
+})(rewardLogic || (rewardLogic = {}));
 
 // JavaScripts/Data/Datacenter.ts
 var Datacenter_exports = {};
@@ -379,195 +896,6 @@ __export(CreateModule_exports, {
   CreateModule: () => CreateModule
 });
 
-// JavaScripts/Tools/NetManager.ts
-var NetManager_exports = {};
-__export(NetManager_exports, {
-  NetManager: () => NetManager,
-  NetModuleBase: () => NetModuleBase
-});
-var NetManager;
-((NetManager2) => {
-  const netInstanceObj = /* @__PURE__ */ new Map();
-  const EVENT_NETMGR_SEND_SERVER = "EVENT_NETMGR_SEND_SERVER";
-  const EVENT_NETMGR_SEND_CLIENT = "EVENT_NETMGR_SEND_CLIENT";
-  const EVENT_NETMGR_PLAYERENTER = "EVENT_NETMGR_PLAYERENTER";
-  const netRegistFunc = /* @__PURE__ */ new Map();
-  class sendClientPackage {
-    data;
-    cmdid;
-    errorid;
-  }
-  class sendServerPackage {
-    data;
-    cmdid;
-    pid;
-  }
-  const errorMap = /* @__PURE__ */ new Map();
-  function setErrorTips(errorid, tips) {
-    if (Gameplay.isClient()) {
-      errorMap.set(errorid, { errorid, act: tips });
-    }
-  }
-  NetManager2.setErrorTips = setErrorTips;
-  function sendNet(cmd, data, pid, errorid = 0) {
-    if (Gameplay.isServer()) {
-      let net = {
-        errorid,
-        data,
-        cmdid: cmd
-      };
-      if (pid) {
-        let p = Gameplay.getPlayer(pid);
-        if (p) {
-          Events.dispatchToClient(p, EVENT_NETMGR_SEND_CLIENT, net);
-        } else {
-          console.error("not find player:" + pid);
-        }
-      } else {
-        Events.dispatchToAllClient(EVENT_NETMGR_SEND_CLIENT, net);
-      }
-    }
-    if (Gameplay.isClient()) {
-      let locPlayer = Gameplay.getCurrentPlayer();
-      if (!locPlayer) {
-        console.error("current player notFind !");
-        return;
-      }
-      let net = {
-        data,
-        cmdid: cmd,
-        pid: locPlayer.getPlayerID()
-      };
-      Events.dispatchToServer(EVENT_NETMGR_SEND_SERVER, net);
-    }
-  }
-  NetManager2.sendNet = sendNet;
-  function initNetMgr() {
-    if (Gameplay.isServer()) {
-      Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p, net) => {
-        const netFunc = netRegistFunc.get(net.cmdid);
-        if (netFunc) {
-          for (let f of netFunc) {
-            let obj = netInstanceObj.get(f.objType);
-            if (!obj) {
-              continue;
-            }
-            try {
-              f.func.call(obj, net.pid, ...net.data);
-            } catch (error) {
-              console.error("net response error!");
-              console.error(error.stack);
-            }
-          }
-        }
-      });
-      Events.addClientListener(EVENT_NETMGR_PLAYERENTER, (p) => {
-        for (let [k, v] of netInstanceObj) {
-          v["playerEnter"](p.getPlayerID());
-        }
-      });
-    }
-    if (Gameplay.isClient()) {
-      Events.addServerListener(EVENT_NETMGR_SEND_CLIENT, (net) => {
-        if (errorMap.has(net.errorid)) {
-          let tip = errorMap.get(net.errorid);
-          if (typeof tip.act == "string") {
-            console.log(tip);
-          } else {
-            tip.act(net.errorid);
-          }
-        }
-        const netFunc = netRegistFunc.get(net.cmdid);
-        if (netFunc) {
-          for (let f of netFunc) {
-            let obj = netInstanceObj.get(f.objType);
-            if (!obj) {
-              continue;
-            }
-            try {
-              f.func.call(obj, ...net.data);
-            } catch (error) {
-              console.error("net response error!");
-              console.error(error.stack);
-            }
-          }
-        }
-      });
-    }
-    for (let [k, v] of netInstanceObj) {
-      v["start"]();
-    }
-    if (Gameplay.isClient()) {
-      Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);
-    }
-  }
-  NetManager2.initNetMgr = initNetMgr;
-  let time = 0;
-  function update() {
-    const now = Date.now();
-    if (time == 0) {
-      time = now;
-    }
-    ;
-    for (let [k, v] of netInstanceObj) {
-      v["update"](now - time);
-    }
-    time = now;
-  }
-  NetManager2.update = update;
-  function netFlagClass(constructor) {
-    const netObj = new constructor();
-    netInstanceObj.set(constructor.name, netObj);
-  }
-  NetManager2.netFlagClass = netFlagClass;
-  function netFlagFunc(cmdid) {
-    return function(target, propertyRey, description) {
-      if (!description.value || typeof description.value != "function") {
-        return;
-      }
-      const className = target.constructor.name;
-      const func = description.value;
-      if (!netRegistFunc.has(cmdid)) {
-        netRegistFunc.set(cmdid, new Array());
-      }
-      let f = {
-        objType: className,
-        func,
-        cmdid
-      };
-      netRegistFunc.get(cmdid).push(f);
-    };
-  }
-  NetManager2.netFlagFunc = netFlagFunc;
-  function getModule(cls) {
-    if (netInstanceObj.has(cls.name)) {
-      return netInstanceObj.get(cls.name);
-    }
-    return null;
-  }
-  NetManager2.getModule = getModule;
-})(NetManager || (NetManager = {}));
-var NetModuleBase = class {
-  isServer = true;
-  constructor() {
-    this.isServer = Gameplay.isServer();
-    this.onAwake();
-  }
-  onAwake() {
-  }
-  start() {
-    this.onStart();
-  }
-  update(dt) {
-    this.onUpdate(dt);
-  }
-  playerEnter(pid) {
-    this.onPlayerEnter(pid);
-  }
-  onPlayerEnter(pid) {
-  }
-};
-
 // JavaScripts/test/CreateModule/BuildingData.ts
 var BuildingData_exports = {};
 __export(BuildingData_exports, {
@@ -819,13 +1147,446 @@ NewScript = __decorateClass([
   Core.Class
 ], NewScript);
 
-// JavaScripts/Other/BulletChatUI.ts
+// JavaScripts/test/test.ts
+var test_exports = {};
+__export(test_exports, {
+  default: () => test
+});
+var test = class extends Core.Script {
+  preloadAssets = "21586,21588,21592,23775";
+  onStart() {
+    Core.GameObject.spawnGameObject("21586");
+  }
+  onUpdate(dt) {
+  }
+  onDestroy() {
+  }
+};
+__decorateClass([
+  Core.Property()
+], test.prototype, "preloadAssets", 2);
+test = __decorateClass([
+  Core.Class
+], test);
+
+// build.ts
+var foreign12 = __toESM(require_ArrayExtFunc());
+
+// JavaScripts/Tools/EventTools.ts
+var EventTools_exports = {};
+__export(EventTools_exports, {
+  EventTools: () => EventTools
+});
+var EventTools;
+((EventTools2) => {
+  let ECallerLoc;
+  ((ECallerLoc2) => {
+    ECallerLoc2[ECallerLoc2["local"] = 0] = "local";
+    ECallerLoc2[ECallerLoc2["server"] = 1] = "server";
+    ECallerLoc2[ECallerLoc2["client"] = 2] = "client";
+  })(ECallerLoc = EventTools2.ECallerLoc || (EventTools2.ECallerLoc = {}));
+  const locEvemtMap = /* @__PURE__ */ new Map();
+  const serverEvemtMap = /* @__PURE__ */ new Map();
+  const clientEvemtMap = /* @__PURE__ */ new Map();
+  const noThisObj = /* @__PURE__ */ new Map();
+  function setEvent(eventName, space = 0 /* local */, thisObj) {
+    return function(target, propertyRey, description) {
+      if (description.value && typeof description.value === "function") {
+        let m = null;
+        switch (space) {
+          case 0 /* local */:
+            m = locEvemtMap;
+            break;
+          case 1 /* server */:
+            m = serverEvemtMap;
+            break;
+          case 2 /* client */:
+            m = clientEvemtMap;
+            break;
+        }
+        if (!m.has(eventName)) {
+          m.set(eventName, []);
+        }
+        let info = [thisObj, description.value, space];
+        m.get(eventName).push(info);
+      }
+    };
+  }
+  EventTools2.setEvent = setEvent;
+  function setNoTargetEvent(eventName, target) {
+    noThisObj.set(eventName, target ? target : {});
+  }
+  EventTools2.setNoTargetEvent = setNoTargetEvent;
+  function callEvent(eventName, ...args) {
+    callEvents(locEvemtMap.get(eventName), eventName, ...args);
+    let csMap = Gameplay.isServer() ? serverEvemtMap.get(eventName) : clientEvemtMap.get(eventName);
+    callEvents(csMap, eventName, ...args);
+    if (Gameplay.isServer()) {
+      if (clientEvemtMap.has(eventName)) {
+        Events.dispatchToAllClient(EVENT_CALLCLIENT, eventName, ...args);
+      }
+    }
+    if (Gameplay.isClient()) {
+      if (serverEvemtMap.has(eventName)) {
+        Events.dispatchToServer(EVENT_CALLSERVER, eventName, ...args);
+      }
+    }
+  }
+  EventTools2.callEvent = callEvent;
+  function callEvents(eInfo, eventName, ...args) {
+    if (eInfo) {
+      for (const eventAvt of eInfo) {
+        try {
+          if (!eventAvt[0]) {
+            let nullObj = noThisObj.has(eventName) ? noThisObj.get(eventName) : {};
+            eventAvt[1].call(nullObj, ...args);
+          } else {
+            if (typeof eventAvt[0] === "function") {
+              eventAvt[1].call(eventAvt[0](), ...args);
+            } else {
+              eventAvt[1].call(eventAvt[0], ...args);
+            }
+          }
+        } catch (error) {
+          console.error("eventTool error:", error.stack);
+        }
+      }
+    }
+  }
+  const EVENT_CALLSERVER = "SUPER_EVENTTOOL_CALLSERVER";
+  const EVENT_CALLCLIENT = "SUPER_EVENTTOOL_CALLCLIENT";
+  function initEventRPC() {
+    if (Gameplay.isServer()) {
+      Events.addClientListener(EVENT_CALLSERVER, clientToServerCallEvent);
+    }
+    if (Gameplay.isClient()) {
+      Events.addServerListener(EVENT_CALLCLIENT, serverToClientCallEvent);
+    }
+  }
+  EventTools2.initEventRPC = initEventRPC;
+  function clientToServerCallEvent(player, ...args) {
+    const [eventName, params] = [args[0], args.slice(1)];
+    callEvents(serverEvemtMap.get(eventName), eventName, ...params);
+  }
+  function serverToClientCallEvent(...args) {
+    const [eventName, params] = [args[0], args.slice(1)];
+    callEvents(clientEvemtMap.get(eventName), eventName, ...params);
+  }
+})(EventTools || (EventTools = {}));
+
+// JavaScripts/Tools/ExtensionType.ts
+var ExtensionType_exports = {};
+__export(ExtensionType_exports, {
+  Action: () => Action,
+  Action1: () => Action1,
+  Action2: () => Action2,
+  Action3: () => Action3,
+  StringUtil: () => StringUtil,
+  TabGroup: () => TabGroup,
+  UICreate: () => UICreate,
+  UIHide: () => UIHide,
+  UIIsShow: () => UIIsShow,
+  UIMgr: () => UIMgr,
+  UIMiddleShow: () => UIMiddleShow,
+  UITopShow: () => UITopShow,
+  findChildByPath: () => findChildByPath,
+  getCanvasChildren: () => getCanvasChildren,
+  widgetToUIElement: () => widgetToUIElement
+});
+var Action = class extends Extension.FunctionUtil.Action {
+};
+var Action1 = class extends Extension.FunctionUtil.Action1 {
+};
+var Action2 = class extends Extension.FunctionUtil.Action2 {
+};
+var Action3 = class extends Extension.FunctionUtil.Action3 {
+};
+var StringUtil = class extends Extension.StringUtil {
+};
+var UIMgr = Extension.UIManager.instance;
+function UIMiddleShow(UIObj, ...params) {
+  console.log("\u6253\u5F00UI\u5230\u4E2D\u5C42:" + UIObj.constructor.name);
+  return UIMgr.showUI(UIObj, Extension.UILayerMiddle, ...params);
+}
+function UITopShow(UIObj, ...params) {
+  console.log("\u6253\u5F00UI\u5230\u9876\u5C42:" + UIObj.constructor.name);
+  return UIMgr.showUI(UIObj, Extension.UILayerTop, ...params);
+}
+function UICreate(PanelClass, parent) {
+  let ui = UIMgr.create(PanelClass);
+  if (parent) {
+    parent.addChild(ui.uiObject);
+  }
+  return ui;
+}
+function UIIsShow(UIObj) {
+  return UIMgr.isShow(UIObj);
+}
+function UIHide(UIObj) {
+  UIMgr.hideUI(UIObj);
+}
+var TabGroup = class {
+  tabArr;
+  selectCallBack;
+  selectChecker;
+  tabStyleHandle;
+  _currentIndex = -1;
+  constructor(tabArr) {
+    this.tabArr = tabArr;
+  }
+  init(tabStyleHandle, selectCallBack, thisArg, defaultIndex = 0) {
+    this.tabStyleHandle = tabStyleHandle.bind(thisArg);
+    this.selectCallBack = selectCallBack.bind(thisArg);
+    for (let i = 0; i < this.tabArr.length; i++) {
+      this.tabArr[i].onClicked.add(() => {
+        this.select(i);
+      });
+    }
+    this.select(defaultIndex);
+  }
+  setSelectChecker(selectChecker, thisArg) {
+    this.selectChecker = selectChecker.bind(thisArg);
+  }
+  select(index, ignoreSame = true) {
+    if (ignoreSame && this._currentIndex == index)
+      return;
+    if (this.selectChecker != null && !this.selectChecker(index)) {
+      return false;
+    }
+    this._currentIndex = index;
+    this.refreshTabs();
+    this.selectCallBack(index);
+    return true;
+  }
+  get currentIndex() {
+    return this._currentIndex;
+  }
+  refreshTabs() {
+    for (let i = 0; i < this.tabArr.length; i++) {
+      this.tabStyleHandle(this.tabArr[i], i == this.currentIndex);
+    }
+  }
+};
+function findChildByPath(canvas, ChildType, path) {
+  let child = canvas.findChildByPath(path);
+  if (child == null) {
+    console.error("CanvasController: The child was not found!  path=" + path);
+    return null;
+  }
+  let widget = child;
+  if (ChildType.name == UI.Button.name || ChildType.name == UI.Button.name) {
+    widget.setFocusable(false);
+    widget.setTouchMethod(UI.ButtonTouchMethod.PreciseTap);
+  }
+  return widget;
+}
+function getCanvasChildren(canvas, ObjClass) {
+  let arr = [];
+  if (canvas == null)
+    return arr;
+  let childNum = canvas.getChildrenCount();
+  for (let i = 0; i < childNum; i++) {
+    let child = canvas.getChildAt(i);
+    let obj = widgetToUIElement(ObjClass, child);
+    if (obj != null) {
+      arr.push(obj);
+    }
+  }
+  return arr;
+}
+function widgetToUIElement(EleClass, widget) {
+  if (!(widget instanceof EleClass)) {
+    return null;
+  }
+  let element = widget;
+  if (element == null || !(widget instanceof EleClass))
+    return null;
+  if (element instanceof UI.Button) {
+    let btn = element;
+    btn.focusable = false;
+    btn.touchMethod = UI.ButtonTouchMethod.PreciseTap;
+    if (btn.visibility == UI.SlateVisibility.HitTestInvisible || btn.visibility == UI.SlateVisibility.SelfHitTestInvisible) {
+      btn.visibility = UI.SlateVisibility.Visible;
+    }
+  }
+  return element;
+}
+
+// JavaScripts/Tools/ObjectMaterial.ts
+var ObjectMaterial_exports = {};
+__export(ObjectMaterial_exports, {
+  SceneObjectSync: () => SceneObjectSync
+});
+var _SceneObjectSync = class {
+  static get instance() {
+    if (!_SceneObjectSync._ins) {
+      _SceneObjectSync._ins = new _SceneObjectSync();
+    }
+    return _SceneObjectSync._ins;
+  }
+  EventSyncObjects = "EventSyncObjects";
+  _showTask = null;
+  _showFuncs = null;
+  _serverObjs = null;
+  _sendTask = null;
+  _attrEqualFuncs = null;
+  _sendLength = 35;
+  init() {
+    if (Gameplay.isClient()) {
+      this._showTask = [];
+      this._showFuncs = /* @__PURE__ */ new Map();
+      Events.addServerListener(this.EventSyncObjects, this.onSyncObject.bind(this));
+    } else {
+      this._serverObjs = /* @__PURE__ */ new Map();
+      this._sendTask = /* @__PURE__ */ new Map();
+      this._attrEqualFuncs = /* @__PURE__ */ new Map();
+      Events.addPlayerLeftListener((p) => {
+        this._sendTask.delete(p.getPlayerID());
+      });
+    }
+  }
+  setSyncMethod(type, func) {
+    this._showFuncs.set(type, func);
+  }
+  onSyncObject(infos) {
+    this._showTask.push(...infos);
+  }
+  update(dt) {
+    if (Gameplay.isClient()) {
+      this.clientUpdate(dt);
+    } else {
+      this.serverUpdate(dt);
+    }
+  }
+  clientUpdate(dt) {
+    if (this._showTask.length > 0) {
+      const task = this._showTask.shift();
+      for (const k in task.myInfo) {
+        let doType = Number(k);
+        if (this._showFuncs.get(doType)) {
+          this._showFuncs.get(doType)(task);
+        }
+      }
+    }
+  }
+  serverUpdate(dt) {
+    if (this._sendTask.size <= 0) {
+      return;
+    }
+    for (let [pid, v] of this._sendTask) {
+      if (v.size <= 0) {
+        this._sendTask.delete(pid);
+      } else {
+        let netPks = [];
+        for (let [uuid, info] of this._sendTask.get(pid)) {
+          if (netPks.length >= this._sendLength) {
+            break;
+          }
+          netPks.push(info);
+          this._sendTask.get(pid).delete(uuid);
+        }
+        let player = Gameplay.getPlayer(pid);
+        if (player) {
+          Events.dispatchToClient(player, this.EventSyncObjects, netPks);
+        }
+      }
+    }
+  }
+  askClientSync(uuid, infos, pid) {
+    if (Gameplay.isClient()) {
+      return;
+    }
+    if (!this._serverObjs.has(uuid)) {
+      let serverData = {
+        uuid,
+        myInfo: {}
+      };
+      this._serverObjs.set(uuid, serverData);
+    }
+    let netPackage = this._serverObjs.get(uuid);
+    let haveChange = false;
+    for (const k in infos) {
+      if (!netPackage.myInfo[k]) {
+        netPackage.myInfo[k] = infos[k];
+        haveChange = true;
+        continue;
+      }
+      let kNum = Number(k);
+      if (this._attrEqualFuncs.get(kNum)) {
+        if (!this._attrEqualFuncs.get(kNum)(netPackage.myInfo[k], infos[k])) {
+          netPackage.myInfo[k] = infos[k];
+          haveChange = true;
+        }
+      } else {
+        if (netPackage.myInfo[k] != infos[k]) {
+          netPackage.myInfo[k] = infos[k];
+          haveChange = true;
+        }
+      }
+    }
+    if (!haveChange) {
+      return;
+    }
+    if (pid) {
+      if (!this._sendTask.get(pid)) {
+        this._sendTask.set(pid, /* @__PURE__ */ new Map());
+      }
+      this._sendTask.get(pid).set(netPackage.uuid, netPackage);
+    } else {
+      let ps = Gameplay.getAllPlayers();
+      for (let p of ps) {
+        if (p) {
+          let _pid = p.getPlayerID();
+          if (!this._sendTask.get(_pid)) {
+            this._sendTask.set(_pid, /* @__PURE__ */ new Map());
+          }
+          this._sendTask.get(_pid).set(netPackage.uuid, netPackage);
+        }
+      }
+    }
+  }
+  setEqualFunc(type, func) {
+    this._attrEqualFuncs.set(type, func);
+  }
+  async askToAllServerObj(pid) {
+    if (Gameplay.isClient()) {
+      return;
+    }
+    let player = Gameplay.getPlayer(pid);
+    if (!player) {
+      return;
+    }
+    if (!this._sendTask.get(pid)) {
+      this._sendTask.set(pid, /* @__PURE__ */ new Map());
+    }
+    for (let [k, v] of this._serverObjs) {
+      this._sendTask.get(pid).set(k, v);
+    }
+  }
+};
+var SceneObjectSync = _SceneObjectSync;
+__publicField(SceneObjectSync, "_ins", null);
+
+// JavaScripts/Tools/Tools.ts
+var Tools_exports = {};
+__export(Tools_exports, {
+  Tools: () => Tools
+});
+var Tools = class {
+  static sleep(time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+  }
+};
+
+// JavaScripts/TQ/ui/BulletChatUI.ts
 var BulletChatUI_exports = {};
 __export(BulletChatUI_exports, {
   BulletChatUI: () => BulletChatUI
 });
 var BulletChatUI;
 ((BulletChatUI2) => {
+  const Event_serverCallClientBullet = "Event_serverCallClientBullet";
+  let bindNet = false;
   let rootCanvas = null;
   const msgTexts = [];
   let axisMin = 0;
@@ -842,9 +1603,19 @@ var BulletChatUI;
       axisMax = Math.max(min, max);
     }
     rootCanvas = canvas;
+    if (Gameplay.isClient() && !bindNet) {
+      bindNet = true;
+      Events.addServerListener(Event_serverCallClientBullet, (msg, time, color) => {
+        createBulletChat(msg, time, color);
+      });
+    }
   }
   BulletChatUI2.init = init;
   function createBulletChat(msg, time = 1e4, color = Type.LinearColor.white) {
+    if (Gameplay.isServer()) {
+      Events.dispatchToAllClient(Event_serverCallClientBullet, msg, time, color);
+      return;
+    }
     if (!rootCanvas || !msg || !msg["toString"]) {
       return;
     }
@@ -852,25 +1623,21 @@ var BulletChatUI;
     if (msg.length <= 0) {
       return;
     }
-    try {
-      time = Number.isNaN(time) ? 2e3 : time;
-      let bc = getNewBc(msg);
-      bc.txt.fontColor = color;
-      bc.txt.outlineColor = Type.LinearColor.black;
-      bc.txt.outlineSize = 1;
-      let endpos = { x: bc.size.x * -1, y: bc.pos.y };
-      const slot = bc.txt.slot;
-      const changePos = new Type.Vector(0, 0);
-      new TweenClass.Tween(bc.pos).to(endpos, time).onUpdate((pos) => {
-        changePos.x = pos.x;
-        changePos.y = pos.y;
-        slot.position = changePos;
-      }).onComplete(() => {
-        bc.run = false;
-      }).start();
-    } catch (error) {
-      console.error("\u5F39\u5E55\u9519\u8BEF\uFF1A" + error.stack);
-    }
+    time = Number.isNaN(time) ? 2e3 : time;
+    let bc = getNewBc(msg);
+    bc.txt.fontColor = color;
+    bc.txt.outlineColor = Type.LinearColor.black;
+    bc.txt.outlineSize = 1;
+    let endpos = { x: bc.size.x * -1, y: bc.pos.y };
+    const slot = bc.txt.slot;
+    const changePos = new Type.Vector(0, 0);
+    new TweenClass.Tween(bc.pos).to(endpos, time).onUpdate((pos) => {
+      changePos.x = pos.x;
+      changePos.y = pos.y;
+      slot.position = changePos;
+    }).onComplete(() => {
+      bc.run = false;
+    }).start();
   }
   BulletChatUI2.createBulletChat = createBulletChat;
   function getNewBc(msg) {
@@ -880,7 +1647,6 @@ var BulletChatUI;
     });
     if (!bc) {
       let ui = UI.TextBlock.newObject(rootCanvas, "msgUIObject");
-      rootCanvas.addChild(ui);
       bc = {
         txt: ui,
         run: true,
@@ -1571,7 +2337,7 @@ var BulletChatUI;
   })(TweenClass || (TweenClass = {}));
 })(BulletChatUI || (BulletChatUI = {}));
 
-// JavaScripts/Other/LoadingUI.ts
+// JavaScripts/TQ/ui/LoadingUI.ts
 var LoadingUI_exports = {};
 __export(LoadingUI_exports, {
   LoadingUI: () => LoadingUI
@@ -1702,279 +2468,6 @@ var _LoadingUI = class {
 var LoadingUI = _LoadingUI;
 __publicField(LoadingUI, "_ins", null);
 
-// JavaScripts/test/test.ts
-var test_exports = {};
-__export(test_exports, {
-  default: () => test
-});
-var test = class extends Core.Script {
-  preloadAssets = "21586,21588,21592,23775";
-  onStart() {
-    Core.GameObject.spawnGameObject("21586");
-  }
-  onUpdate(dt) {
-  }
-  onDestroy() {
-  }
-};
-__decorateClass([
-  Core.Property()
-], test.prototype, "preloadAssets", 2);
-test = __decorateClass([
-  Core.Class
-], test);
-
-// JavaScripts/Tools/EventTools.ts
-var EventTools_exports = {};
-__export(EventTools_exports, {
-  EventTools: () => EventTools
-});
-var EventTools;
-((EventTools2) => {
-  let ECallerLoc;
-  ((ECallerLoc2) => {
-    ECallerLoc2[ECallerLoc2["local"] = 0] = "local";
-    ECallerLoc2[ECallerLoc2["server"] = 1] = "server";
-    ECallerLoc2[ECallerLoc2["client"] = 2] = "client";
-  })(ECallerLoc = EventTools2.ECallerLoc || (EventTools2.ECallerLoc = {}));
-  const locEvemtMap = /* @__PURE__ */ new Map();
-  const serverEvemtMap = /* @__PURE__ */ new Map();
-  const clientEvemtMap = /* @__PURE__ */ new Map();
-  const noThisObj = /* @__PURE__ */ new Map();
-  function setEvent(eventName, space = 0 /* local */, thisObj) {
-    return function(target, propertyRey, description) {
-      if (description.value && typeof description.value === "function") {
-        let m = null;
-        switch (space) {
-          case 0 /* local */:
-            m = locEvemtMap;
-            break;
-          case 1 /* server */:
-            m = serverEvemtMap;
-            break;
-          case 2 /* client */:
-            m = clientEvemtMap;
-            break;
-        }
-        if (!m.has(eventName)) {
-          m.set(eventName, []);
-        }
-        let info = [thisObj, description.value, space];
-        m.get(eventName).push(info);
-      }
-    };
-  }
-  EventTools2.setEvent = setEvent;
-  function setNoTargetEvent(eventName, target) {
-    noThisObj.set(eventName, target ? target : {});
-  }
-  EventTools2.setNoTargetEvent = setNoTargetEvent;
-  function callEvent(eventName, ...args) {
-    callEvents(locEvemtMap.get(eventName), eventName, ...args);
-    let csMap = Gameplay.isServer() ? serverEvemtMap.get(eventName) : clientEvemtMap.get(eventName);
-    callEvents(csMap, eventName, ...args);
-    if (Gameplay.isServer()) {
-      if (clientEvemtMap.has(eventName)) {
-        Events.dispatchToAllClient(EVENT_CALLCLIENT, eventName, ...args);
-      }
-    }
-    if (Gameplay.isClient()) {
-      if (serverEvemtMap.has(eventName)) {
-        Events.dispatchToServer(EVENT_CALLSERVER, eventName, ...args);
-      }
-    }
-  }
-  EventTools2.callEvent = callEvent;
-  function callEvents(eInfo, eventName, ...args) {
-    if (eInfo) {
-      for (const eventAvt of eInfo) {
-        try {
-          if (!eventAvt[0]) {
-            let nullObj = noThisObj.has(eventName) ? noThisObj.get(eventName) : {};
-            eventAvt[1].call(nullObj, ...args);
-          } else {
-            if (typeof eventAvt[0] === "function") {
-              eventAvt[1].call(eventAvt[0](), ...args);
-            } else {
-              eventAvt[1].call(eventAvt[0], ...args);
-            }
-          }
-        } catch (error) {
-          console.error("eventTool error:", error.stack);
-        }
-      }
-    }
-  }
-  const EVENT_CALLSERVER = "SUPER_EVENTTOOL_CALLSERVER";
-  const EVENT_CALLCLIENT = "SUPER_EVENTTOOL_CALLCLIENT";
-  function initEventRPC() {
-    if (Gameplay.isServer()) {
-      Events.addClientListener(EVENT_CALLSERVER, clientToServerCallEvent);
-    }
-    if (Gameplay.isClient()) {
-      Events.addServerListener(EVENT_CALLCLIENT, serverToClientCallEvent);
-    }
-  }
-  EventTools2.initEventRPC = initEventRPC;
-  function clientToServerCallEvent(player, ...args) {
-    const [eventName, params] = [args[0], args.slice(1)];
-    callEvents(serverEvemtMap.get(eventName), eventName, ...params);
-  }
-  function serverToClientCallEvent(...args) {
-    const [eventName, params] = [args[0], args.slice(1)];
-    callEvents(clientEvemtMap.get(eventName), eventName, ...params);
-  }
-})(EventTools || (EventTools = {}));
-
-// JavaScripts/Tools/ExtensionType.ts
-var ExtensionType_exports = {};
-__export(ExtensionType_exports, {
-  Action: () => Action,
-  Action1: () => Action1,
-  Action2: () => Action2,
-  Action3: () => Action3,
-  StringUtil: () => StringUtil,
-  TabGroup: () => TabGroup,
-  UICreate: () => UICreate,
-  UIHide: () => UIHide,
-  UIIsShow: () => UIIsShow,
-  UIMgr: () => UIMgr,
-  UIMiddleShow: () => UIMiddleShow,
-  UITopShow: () => UITopShow,
-  findChildByPath: () => findChildByPath,
-  getCanvasChildren: () => getCanvasChildren,
-  widgetToUIElement: () => widgetToUIElement
-});
-var Action = class extends Extension.FunctionUtil.Action {
-};
-var Action1 = class extends Extension.FunctionUtil.Action1 {
-};
-var Action2 = class extends Extension.FunctionUtil.Action2 {
-};
-var Action3 = class extends Extension.FunctionUtil.Action3 {
-};
-var StringUtil = class extends Extension.StringUtil {
-};
-var UIMgr = Extension.UIManager.instance;
-function UIMiddleShow(UIObj, ...params) {
-  console.log("\u6253\u5F00UI\u5230\u4E2D\u5C42:" + UIObj.constructor.name);
-  return UIMgr.showUI(UIObj, Extension.UILayerMiddle, ...params);
-}
-function UITopShow(UIObj, ...params) {
-  console.log("\u6253\u5F00UI\u5230\u9876\u5C42:" + UIObj.constructor.name);
-  return UIMgr.showUI(UIObj, Extension.UILayerTop, ...params);
-}
-function UICreate(PanelClass, parent) {
-  let ui = UIMgr.create(PanelClass);
-  if (parent) {
-    parent.addChild(ui.uiObject);
-  }
-  return ui;
-}
-function UIIsShow(UIObj) {
-  return UIMgr.isShow(UIObj);
-}
-function UIHide(UIObj) {
-  UIMgr.hideUI(UIObj);
-}
-var TabGroup = class {
-  tabArr;
-  selectCallBack;
-  selectChecker;
-  tabStyleHandle;
-  _currentIndex = -1;
-  constructor(tabArr) {
-    this.tabArr = tabArr;
-  }
-  init(tabStyleHandle, selectCallBack, thisArg, defaultIndex = 0) {
-    this.tabStyleHandle = tabStyleHandle.bind(thisArg);
-    this.selectCallBack = selectCallBack.bind(thisArg);
-    for (let i = 0; i < this.tabArr.length; i++) {
-      this.tabArr[i].onClicked.add(() => {
-        this.select(i);
-      });
-    }
-    this.select(defaultIndex);
-  }
-  setSelectChecker(selectChecker, thisArg) {
-    this.selectChecker = selectChecker.bind(thisArg);
-  }
-  select(index, ignoreSame = true) {
-    if (ignoreSame && this._currentIndex == index)
-      return;
-    if (this.selectChecker != null && !this.selectChecker(index)) {
-      return false;
-    }
-    this._currentIndex = index;
-    this.refreshTabs();
-    this.selectCallBack(index);
-    return true;
-  }
-  get currentIndex() {
-    return this._currentIndex;
-  }
-  refreshTabs() {
-    for (let i = 0; i < this.tabArr.length; i++) {
-      this.tabStyleHandle(this.tabArr[i], i == this.currentIndex);
-    }
-  }
-};
-function findChildByPath(canvas, ChildType, path) {
-  let child = canvas.findChildByPath(path);
-  if (child == null) {
-    console.error("CanvasController: The child was not found!  path=" + path);
-    return null;
-  }
-  let widget = child;
-  if (ChildType.name == UI.Button.name || ChildType.name == UI.Button.name) {
-    widget.setFocusable(false);
-    widget.setTouchMethod(UI.ButtonTouchMethod.PreciseTap);
-  }
-  return widget;
-}
-function getCanvasChildren(canvas, ObjClass) {
-  let arr = [];
-  if (canvas == null)
-    return arr;
-  let childNum = canvas.getChildrenCount();
-  for (let i = 0; i < childNum; i++) {
-    let child = canvas.getChildAt(i);
-    let obj = widgetToUIElement(ObjClass, child);
-    if (obj != null) {
-      arr.push(obj);
-    }
-  }
-  return arr;
-}
-function widgetToUIElement(EleClass, widget) {
-  if (!(widget instanceof EleClass)) {
-    return null;
-  }
-  let element = widget;
-  if (element == null || !(widget instanceof EleClass))
-    return null;
-  if (element instanceof UI.Button) {
-    let btn = element;
-    btn.focusable = false;
-    btn.touchMethod = UI.ButtonTouchMethod.PreciseTap;
-    if (btn.visibility == UI.SlateVisibility.HitTestInvisible || btn.visibility == UI.SlateVisibility.SelfHitTestInvisible) {
-      btn.visibility = UI.SlateVisibility.Visible;
-    }
-  }
-  return element;
-}
-
-// JavaScripts/Tools/Tools.ts
-var Tools_exports = {};
-__export(Tools_exports, {
-  Tools: () => Tools
-});
-var Tools = class {
-  static sleep(time) {
-    return new Promise((resolve) => setTimeout(resolve, time));
-  }
-};
-
 // JavaScripts/UIDefault.ts
 var UIDefault_exports = {};
 __export(UIDefault_exports, {
@@ -2002,19 +2495,24 @@ UIDefault = __decorateClass([
 // build.ts
 var MWModuleMap = {
   "build": build_exports,
+  "JavaScripts/CommonLogic/BackpackModule": foreign1,
+  "JavaScripts/CommonLogic/NetManager": NetManager_exports,
+  "JavaScripts/CommonLogic/RankLogic": RankLogic_exports,
+  "JavaScripts/CommonLogic/RewardModule": RewardModule_exports,
   "JavaScripts/Data/Datacenter": Datacenter_exports,
   "JavaScripts/HYMGame": HYMGame_exports,
   "JavaScripts/NewScript": NewScript_exports,
   "JavaScripts/NewUI": NewUI_exports,
-  "JavaScripts/Other/BulletChatUI": BulletChatUI_exports,
-  "JavaScripts/Other/LoadingUI": LoadingUI_exports,
   "JavaScripts/test/CreateModule/BuildingData": BuildingData_exports,
   "JavaScripts/test/CreateModule/CreateModule": CreateModule_exports,
   "JavaScripts/test/test": test_exports,
+  "JavaScripts/Tools/ArrayExtFunc": foreign12,
   "JavaScripts/Tools/EventTools": EventTools_exports,
   "JavaScripts/Tools/ExtensionType": ExtensionType_exports,
-  "JavaScripts/Tools/NetManager": NetManager_exports,
+  "JavaScripts/Tools/ObjectMaterial": ObjectMaterial_exports,
   "JavaScripts/Tools/Tools": Tools_exports,
+  "JavaScripts/TQ/ui/BulletChatUI": BulletChatUI_exports,
+  "JavaScripts/TQ/ui/LoadingUI": LoadingUI_exports,
   "JavaScripts/ui-generate/NewUI_generate": NewUI_generate_exports,
   "JavaScripts/UIDefault": UIDefault_exports
 };

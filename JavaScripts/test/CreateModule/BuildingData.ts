@@ -1,4 +1,4 @@
-import { Datacenter } from "../../Data/Datacenter";
+import { Datacenter } from "../../TQ/tqBase/Datacenter";
 
 type buildingInfo = [
     string,

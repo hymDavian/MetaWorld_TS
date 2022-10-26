@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: \u5f53\u524d\u6587\u4ef6",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Server",
+            "type": "node",
+            "request": "attach",
+            "protocol": "inspector",
+            "trace": true,
+            "sourceMaps": true,
+            "remoteRoot": "${workspaceFolder}",
+            "port": 23300
+        },
+        {
+            "name": "Client",
+            "type": "node",
+            "request": "attach",
+            "protocol": "inspector",
+            "trace": true,
+            "sourceMaps": true,
+            "remoteRoot": "${workspaceFolder}",
+            "port": 23301
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Server/Client",
+            "configurations": [
+                "Server",
+                "Client"
+            ]
+        }
+    ]
+}

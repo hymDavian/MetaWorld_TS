@@ -1,5 +1,8 @@
 
 export namespace BulletChatUI {
+
+    const Event_serverCallClientBullet: string = "Event_serverCallClientBullet";
+    let bindNet: boolean = false
     let rootCanvas: UI.Canvas = null;//弹幕使用的画布UI对象
     const msgTexts: BulletChat[] = [];//弹幕列表
     let axisMin: number = 0;
@@ -27,16 +30,21 @@ export namespace BulletChatUI {
             axisMax = Math.max(min, max);
         }
         rootCanvas = canvas;
+
+        if (Gameplay.isClient() && !bindNet) {
+            bindNet = true;
+            Events.addServerListener(Event_serverCallClientBullet, (msg: string, time: number, color: Type.LinearColor) => {
+                createBulletChat(msg, time, color);
+            })
+        }
     }
 
-    /**生成弹幕
-     * 
-     * @param msg 弹幕信息
-     * @param time 飞行总时间
-     * @param color 文字颜色
-     * @returns 
-     */
     export function createBulletChat(msg: string, time: number = 10000, color: Type.LinearColor = Type.LinearColor.white) {
+
+        if (Gameplay.isServer()) {
+            Events.dispatchToAllClient(Event_serverCallClientBullet, msg, time, color);
+            return;
+        }
 
         if (!rootCanvas || !msg || !msg["toString"]) {//没有画布，没有文字，文字为空，不需要创建弹幕
             return;
@@ -46,27 +54,22 @@ export namespace BulletChatUI {
             return;
         }
 
-        try {
-            time = Number.isNaN(time) ? 2000 : time;
-            let bc = getNewBc(msg);
-            bc.txt.fontColor = (color);
-            bc.txt.outlineColor = (Type.LinearColor.black);
-            bc.txt.outlineSize = (1)
-            let endpos = { x: bc.size.x * -1, y: bc.pos.y };//获取结束点
-            const slot = bc.txt.slot;
-            const changePos = new Type.Vector(0, 0);
+        time = Number.isNaN(time) ? 2000 : time;
+        let bc = getNewBc(msg);
+        bc.txt.fontColor = (color);
+        bc.txt.outlineColor = (Type.LinearColor.black);
+        bc.txt.outlineSize = (1)
+        let endpos = { x: bc.size.x * -1, y: bc.pos.y };//获取结束点
+        const slot = bc.txt.slot;
+        const changePos = new Type.Vector(0, 0);
 
-            new TweenClass.Tween(bc.pos).to(endpos, time).onUpdate(pos => {
-                changePos.x = pos.x;
-                changePos.y = pos.y;
-                slot.position = (changePos);
-            }).onComplete(() => {
-                bc.run = false;
-            }).start();
-        } catch (error) {
-            console.error("弹幕错误：" + error.stack);
-        }
-
+        new TweenClass.Tween(bc.pos).to(endpos, time).onUpdate(pos => {
+            changePos.x = pos.x;
+            changePos.y = pos.y;
+            slot.position = (changePos);
+        }).onComplete(() => {
+            bc.run = false;
+        }).start();
     }
 
     function getNewBc(msg: string): BulletChat {
@@ -74,7 +77,6 @@ export namespace BulletChatUI {
         let bc = msgTexts.find(v => { return !v.run });
         if (!bc) {//没找到没使用的旧弹幕对象
             let ui = UI.TextBlock.newObject(rootCanvas, "msgUIObject");
-            rootCanvas.addChild(ui)
             bc = {
                 txt: ui,
                 run: true,
@@ -83,9 +85,6 @@ export namespace BulletChatUI {
             }//构建一个新弹幕对象
             msgTexts.push(bc);
             console.log("新建弹幕，目前总弹幕数：" + msgTexts.length);
-
-            // Type.Vector p1;
-            // p1.add( p1  )
         }
         else {
             bc.run = true;//置为正在使用中
@@ -99,7 +98,6 @@ export namespace BulletChatUI {
         return bc;
     }
 
-    /**驱动弹幕飞行的帧更新函数，放在外部调用 */
     export function update() {
         TweenClass.update();
     }

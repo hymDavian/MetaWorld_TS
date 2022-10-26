@@ -1,7 +1,7 @@
-﻿import { Datacenter } from "./Data/Datacenter";
+﻿import { Datacenter } from "./TQ/tqBase/Datacenter";
 import NewUI from "./NewUI";
 import { BuildingData } from "./test/CreateModule/BuildingData";
-import { NetManager } from "./Tools/NetManager";
+import { NetManager } from "./TQ/CommonLogic/NetManager";
 
 @Core.Class
 export default class HYMGame extends Core.Script {
