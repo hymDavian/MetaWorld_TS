@@ -5,7 +5,7 @@
  */
 
 import { CreateModule } from "./test/CreateModule/CreateModule";
-import { NetManager } from "./TQ/CommonLogic/NetManager";
+import { NetManager } from "./TQ/tqBase/NetManager";
 import NewUI_Generate from "./ui-generate/NewUI_generate";
 
 export default class NewUI extends NewUI_Generate {
