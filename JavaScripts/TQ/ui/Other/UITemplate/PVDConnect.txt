@@ -1,0 +1,2 @@
+import * as UE from "ue";
+UE.KismetSystemLibrary.ExecuteConsoleCommand(this.currentPlayer.character["actor"], "pvd connect");
