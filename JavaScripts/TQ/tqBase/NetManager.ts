@@ -84,7 +84,7 @@ export namespace NetManager {
 
     /**网络传输初始化 */
     export function initNetMgr() {
-        const curIsServer: boolean = Gameplay.isServer();
+
         if (Gameplay.isServer()) {
             //收到来自客户端的数据时
             Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p: Gameplay.Player, net: sendServerPackage) => {
@@ -163,8 +163,19 @@ export namespace NetManager {
     export function update() {
         const now = Date.now();
         if (time == 0) { time = now };
+        const curIsServer: boolean = Gameplay.isServer();
         for (let [k, v] of netInstanceObj) {
-            v["update"](now - time);
+            if (v.netLocation == ModuleNetLocation.P2P) {
+                v["update"](now - time);
+            }
+            else {
+                if (v.netLocation == ModuleNetLocation.Client && !curIsServer) {//当前处于客户端，且自身不是服务器模块
+                    v["update"](now - time);
+                }
+                else if (v.netLocation == ModuleNetLocation.Server && curIsServer) {
+                    v["update"](now - time);
+                }
+            }
         }
         time = now;
     }
@@ -208,14 +219,27 @@ export namespace NetManager {
     }
 }
 
+export enum ModuleNetLocation {
+    /**同时可以作为服务器和客户端模块 */
+    P2P,
+    /**服务器模块 */
+    Server,
+    /**客户端模块 */
+    Client
+}
+
 /**网络对象 */
 export abstract class NetModuleBase {
 
     /**自身是否为服务器对象 */
-    public readonly isServer: boolean = true;
+
     public constructor() {
-        this.isServer = Gameplay.isServer();
         this.onAwake();
+    }
+
+    /**自身网络定位 */
+    public get netLocation(): ModuleNetLocation {
+        return ModuleNetLocation.P2P;
     }
 
     /**自身所属初始化顺序(数字越高，执行start越靠前) */

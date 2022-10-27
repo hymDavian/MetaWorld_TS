@@ -4,6 +4,7 @@ export class Action1<T> extends Extension.FunctionUtil.Action1<T>{ };
 export class Action2<T, U> extends Extension.FunctionUtil.Action2<T, U>{ };
 export class Action3<T, U, V> extends Extension.FunctionUtil.Action3<T, U, V>{ };
 export class StringUtil extends Extension.StringUtil { };
+export class Tween<T> extends Extension.TweenUtil.Tween<T>{ };
 
 
 export let UIMgr = Extension.UIManager.instance;
@@ -15,6 +16,10 @@ export function UITopShow(UIObj: UI.UIBehaviour, ...params: any[]) {
     console.log("打开UI到顶层:" + UIObj.constructor.name)
     return UIMgr.showUI(UIObj, Extension.UILayerTop, ...params);
 }
+export function UIShowClass<T extends UI.UIBehaviour>(PanelClass: { new(): T; }, ...params: any[]) {
+    UIMgr.show(PanelClass, ...params);
+}
+
 
 export function UICreate<T extends UI.UIBehaviour>(PanelClass: { new(): T; }, parent?: UI.Canvas): T {
     let ui: T = UIMgr.create(PanelClass);
@@ -28,6 +33,9 @@ export function UIIsShow(UIObj: UI.UIBehaviour) {
 }
 export function UIHide(UIObj: UI.UIBehaviour) {
     UIMgr.hideUI(UIObj);
+}
+export function UIHideClass<T extends UI.UIBehaviour>(PanelClass: { new(): T; }) {
+    UIMgr.hide(PanelClass);
 }
 
 //选项卡组

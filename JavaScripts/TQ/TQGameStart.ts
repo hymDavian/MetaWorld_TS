@@ -1,4 +1,4 @@
-import { Action1 } from "./Tools/ExtensionType";
+import { Action1, Tween } from "./Tools/ExtensionType";
 import { Class } from "./Tools/Tools";
 import { Datacenter } from "./tqBase/Datacenter";
 import { NetManager } from "./tqBase/NetManager";
@@ -38,6 +38,7 @@ export abstract class TQGameStart extends Core.Script {
     protected onUpdate(dt: number): void {
         NetManager.update();
         this._customUpdateAct.call(dt);
+        Extension.TweenUtil.TWEEN.update(dt);
     }
 
     /** 脚本被销毁时最后一帧执行完调用此函数 */
