@@ -4,6 +4,8 @@ export class Action1<T> extends Extension.FunctionUtil.Action1<T>{ };
 export class Action2<T, U> extends Extension.FunctionUtil.Action2<T, U>{ };
 export class Action3<T, U, V> extends Extension.FunctionUtil.Action3<T, U, V>{ };
 export class StringUtil extends Extension.StringUtil { };
+
+
 export let UIMgr = Extension.UIManager.instance;
 export function UIMiddleShow(UIObj: UI.UIBehaviour, ...params: any[]) {
     console.log("打开UI到中层:" + UIObj.constructor.name)

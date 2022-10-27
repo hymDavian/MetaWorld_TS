@@ -84,6 +84,7 @@ export namespace NetManager {
 
     /**网络传输初始化 */
     export function initNetMgr() {
+        const curIsServer: boolean = Gameplay.isServer();
         if (Gameplay.isServer()) {
             //收到来自客户端的数据时
             Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p: Gameplay.Player, net: sendServerPackage) => {
@@ -140,9 +141,17 @@ export namespace NetManager {
             })
         }
 
+        let modArray: NetModuleBase[] = [];
         for (let [k, v] of netInstanceObj) {
-            v["start"]();
+            modArray.push(v);
         }
+        modArray.sort((a, b) => {
+            return b.getModuleIndex() - a.getModuleIndex();
+        });
+        modArray.forEach(m => {
+            m["start"]();
+        })
+
 
         if (Gameplay.isClient()) {
             Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);//此客户端初始化完成了，所有模块start已经走完，通知服务器，玩家进入
@@ -207,6 +216,11 @@ export abstract class NetModuleBase {
     public constructor() {
         this.isServer = Gameplay.isServer();
         this.onAwake();
+    }
+
+    /**自身所属初始化顺序(数字越高，执行start越靠前) */
+    public getModuleIndex(): number {
+        return 0;
     }
 
     /**构造后调用 */

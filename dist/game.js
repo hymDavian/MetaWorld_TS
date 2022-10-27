@@ -36,15 +36,21 @@ var __publicField = (obj, key, value) => {
   return value;
 };
 
-// JavaScripts/CommonLogic/BackpackModule.ts
-var require_BackpackModule = __commonJS({
-  "JavaScripts/CommonLogic/BackpackModule.ts"() {
+// JavaScripts/TQ/CommonLogic/Backpack.ts
+var require_Backpack = __commonJS({
+  "JavaScripts/TQ/CommonLogic/Backpack.ts"() {
   }
 });
 
-// JavaScripts/Tools/ArrayExtFunc.ts
+// JavaScripts/TQ/CommonLogic/BackpackModule.ts
+var require_BackpackModule = __commonJS({
+  "JavaScripts/TQ/CommonLogic/BackpackModule.ts"() {
+  }
+});
+
+// JavaScripts/TQ/Tools/ArrayExtFunc.ts
 var require_ArrayExtFunc = __commonJS({
-  "JavaScripts/Tools/ArrayExtFunc.ts"() {
+  "JavaScripts/TQ/Tools/ArrayExtFunc.ts"() {
     if (!Array.prototype.add) {
       Object.defineProperty(Array.prototype, "add", {
         value(item) {
@@ -205,356 +211,14 @@ __export(build_exports, {
   MWModuleMap: () => MWModuleMap
 });
 module.exports = __toCommonJS(build_exports);
-var foreign1 = __toESM(require_BackpackModule());
 
-// JavaScripts/CommonLogic/NetManager.ts
-var NetManager_exports = {};
-__export(NetManager_exports, {
-  NetManager: () => NetManager,
-  NetModuleBase: () => NetModuleBase
+// JavaScripts/HYMGame.ts
+var HYMGame_exports = {};
+__export(HYMGame_exports, {
+  default: () => HYMGame
 });
-var NetManager;
-((NetManager2) => {
-  const netInstanceObj = /* @__PURE__ */ new Map();
-  const EVENT_NETMGR_SEND_SERVER = "EVENT_NETMGR_SEND_SERVER";
-  const EVENT_NETMGR_SEND_CLIENT = "EVENT_NETMGR_SEND_CLIENT";
-  const EVENT_NETMGR_PLAYERENTER = "EVENT_NETMGR_PLAYERENTER";
-  const netRegistFunc = /* @__PURE__ */ new Map();
-  class sendClientPackage {
-    data;
-    cmdid;
-    errorid;
-  }
-  class sendServerPackage {
-    data;
-    cmdid;
-    pid;
-  }
-  const errorMap = /* @__PURE__ */ new Map();
-  function setErrorTips(errorid, tips) {
-    if (Gameplay.isClient()) {
-      errorMap.set(errorid, { errorid, act: tips });
-    }
-  }
-  NetManager2.setErrorTips = setErrorTips;
-  function sendNet(cmd, data, pid, errorid = 0) {
-    if (Gameplay.isServer()) {
-      let net = {
-        errorid,
-        data,
-        cmdid: cmd
-      };
-      if (pid) {
-        let p = Gameplay.getPlayer(pid);
-        if (p) {
-          Events.dispatchToClient(p, EVENT_NETMGR_SEND_CLIENT, net);
-        } else {
-          console.error("not find player:" + pid);
-        }
-      } else {
-        Events.dispatchToAllClient(EVENT_NETMGR_SEND_CLIENT, net);
-      }
-    }
-    if (Gameplay.isClient()) {
-      let locPlayer = Gameplay.getCurrentPlayer();
-      if (!locPlayer) {
-        console.error("current player notFind !");
-        return;
-      }
-      let net = {
-        data,
-        cmdid: cmd,
-        pid: locPlayer.getPlayerID()
-      };
-      Events.dispatchToServer(EVENT_NETMGR_SEND_SERVER, net);
-    }
-  }
-  NetManager2.sendNet = sendNet;
-  function initNetMgr() {
-    if (Gameplay.isServer()) {
-      Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p, net) => {
-        const netFunc = netRegistFunc.get(net.cmdid);
-        if (netFunc) {
-          for (let f of netFunc) {
-            let obj = netInstanceObj.get(f.objType);
-            if (!obj) {
-              continue;
-            }
-            try {
-              f.func.call(obj, net.pid, ...net.data);
-            } catch (error) {
-              console.error("net response error!");
-              console.error(error.stack);
-            }
-          }
-        }
-      });
-      Events.addClientListener(EVENT_NETMGR_PLAYERENTER, (p) => {
-        for (let [k, v] of netInstanceObj) {
-          v["playerEnter"](p.getPlayerID());
-        }
-      });
-    }
-    if (Gameplay.isClient()) {
-      Events.addServerListener(EVENT_NETMGR_SEND_CLIENT, (net) => {
-        if (errorMap.has(net.errorid)) {
-          let tip = errorMap.get(net.errorid);
-          if (typeof tip.act == "string") {
-            console.log(tip);
-          } else {
-            tip.act(net.errorid);
-          }
-        }
-        const netFunc = netRegistFunc.get(net.cmdid);
-        if (netFunc) {
-          for (let f of netFunc) {
-            let obj = netInstanceObj.get(f.objType);
-            if (!obj) {
-              continue;
-            }
-            try {
-              f.func.call(obj, ...net.data);
-            } catch (error) {
-              console.error("net response error!");
-              console.error(error.stack);
-            }
-          }
-        }
-      });
-    }
-    for (let [k, v] of netInstanceObj) {
-      v["start"]();
-    }
-    if (Gameplay.isClient()) {
-      Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);
-    }
-  }
-  NetManager2.initNetMgr = initNetMgr;
-  let time = 0;
-  function update() {
-    const now = Date.now();
-    if (time == 0) {
-      time = now;
-    }
-    ;
-    for (let [k, v] of netInstanceObj) {
-      v["update"](now - time);
-    }
-    time = now;
-  }
-  NetManager2.update = update;
-  function netFlagClass(constructor) {
-    const netObj = new constructor();
-    netInstanceObj.set(constructor.name, netObj);
-  }
-  NetManager2.netFlagClass = netFlagClass;
-  function netFlagFunc(cmdid) {
-    return function(target, propertyRey, description) {
-      if (!description.value || typeof description.value != "function") {
-        return;
-      }
-      const className = target.constructor.name;
-      const func = description.value;
-      if (!netRegistFunc.has(cmdid)) {
-        netRegistFunc.set(cmdid, new Array());
-      }
-      let f = {
-        objType: className,
-        func,
-        cmdid
-      };
-      netRegistFunc.get(cmdid).push(f);
-    };
-  }
-  NetManager2.netFlagFunc = netFlagFunc;
-  function getModule(cls) {
-    if (netInstanceObj.has(cls.name)) {
-      return netInstanceObj.get(cls.name);
-    }
-    return null;
-  }
-  NetManager2.getModule = getModule;
-})(NetManager || (NetManager = {}));
-var NetModuleBase = class {
-  isServer = true;
-  constructor() {
-    this.isServer = Gameplay.isServer();
-    this.onAwake();
-  }
-  onAwake() {
-  }
-  start() {
-    this.onStart();
-  }
-  update(dt) {
-    this.onUpdate(dt);
-  }
-  playerEnter(pid) {
-    this.onPlayerEnter(pid);
-  }
-  onPlayerEnter(pid) {
-  }
-};
 
-// JavaScripts/CommonLogic/RankLogic.ts
-var RankLogic_exports = {};
-__export(RankLogic_exports, {
-  RankLogic: () => RankLogic
-});
-var EVENT_RANK_REP = "EVENT_RANK_REP";
-var EVENT_RANK_REQ = "EVENT_RANK_REQ";
-var RankLogic = class {
-  C2S = true;
-  infoTypeName = null;
-  sortBasis = [];
-  constructor(infoName, isC2S = true) {
-    this.infoTypeName = infoName.name;
-    this.C2S = isC2S;
-    this.clientInit();
-    this.serverInit();
-  }
-  uiAct = null;
-  dataAct = null;
-  clientInit() {
-    let eventFunc = this.C2S ? Events.addServerListener : Events.addLocalListener;
-    eventFunc(`${EVENT_RANK_REP}_${this.infoTypeName}`, (infos) => {
-      if (this.uiAct) {
-        if (this.sortBasis.length > 0) {
-          infos.sort((a, b) => {
-            for (let i = 0; i < this.sortBasis.length; i++) {
-              const isUp = this.sortBasis[i][2];
-              const ka = this.sortBasis[i][0];
-              const kb = this.sortBasis[i][0];
-              if (a[ka] == null || a[ka] == void 0 || b[kb] == null || b[kb] == void 0) {
-                continue;
-              }
-              if (a[ka] == b[kb]) {
-                continue;
-              }
-              let [na, nb] = [Number(a[ka]), Number(b[kb])];
-              if (Number.isNaN(na) || Number.isNaN(nb)) {
-                continue;
-              }
-              return isUp ? nb - na : na - nb;
-            }
-            return 0;
-          });
-        }
-        this.uiAct(infos);
-      }
-    });
-  }
-  serverInit() {
-    if (this.C2S) {
-      Events.addClientListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, (player) => {
-        this.sendRank(player);
-      });
-    } else {
-      Events.addLocalListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, () => {
-        let data = this.dataAct ? this.dataAct() : [];
-        Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
-      });
-    }
-  }
-  requestRank() {
-    if (Gameplay.isClient()) {
-      if (this.C2S) {
-        Events.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
-      } else {
-        Events.dispatchLocal(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
-      }
-    }
-  }
-  sendRank(pid, data) {
-    if (!data) {
-      data = this.dataAct ? this.dataAct() : [];
-    }
-    if (data.length <= 0) {
-      return;
-    }
-    if (this.C2S && Gameplay.isServer()) {
-      let p = pid instanceof Gameplay.Player ? pid : Gameplay.getPlayer(pid);
-      Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
-    } else {
-      Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
-    }
-  }
-  sendAllRank(data) {
-    if (!this.C2S || Gameplay.isClient()) {
-      return;
-    }
-    if (!data) {
-      data = this.dataAct ? this.dataAct() : [];
-    }
-    Gameplay.getAllPlayers().forEach((p) => {
-      Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
-    });
-  }
-  setClientAction(action) {
-    this.uiAct = action;
-  }
-  setCreateData(action) {
-    this.dataAct = action;
-  }
-  setSortBasis(...basis) {
-    this.sortBasis.length = 0;
-    basis.sort((a, b) => {
-      return b[1] - a[1];
-    });
-    this.sortBasis.push(...basis);
-  }
-};
-
-// JavaScripts/CommonLogic/RewardModule.ts
-var RewardModule_exports = {};
-__export(RewardModule_exports, {
-  rewardLogic: () => rewardLogic
-});
-var rewardLogic;
-((rewardLogic2) => {
-  const EVENT_RECEIVE_REWARD = "EVENT_RECEIVE_REWARD";
-  let getLog = false;
-  let actions_C = /* @__PURE__ */ new Map();
-  let actions_S = /* @__PURE__ */ new Map();
-  function setReceiveFunc(cmd, act) {
-    let map = Gameplay.isClient() ? actions_C : actions_S;
-    if (!map.has(cmd)) {
-      map.set(cmd, []);
-    }
-    map.get(cmd).push(act);
-  }
-  rewardLogic2.setReceiveFunc = setReceiveFunc;
-  function initRewardAct(log = false) {
-    if (Gameplay.isClient()) {
-      Events.addServerListener(EVENT_RECEIVE_REWARD, doRewardAction);
-    }
-    getLog = log;
-  }
-  rewardLogic2.initRewardAct = initRewardAct;
-  function sendReward(pid, cmd, ...items) {
-    if (Gameplay.isClient()) {
-      return;
-    }
-    doRewardAction(pid, cmd, items);
-    Events.dispatchToClient(Gameplay.getPlayer(pid), EVENT_RECEIVE_REWARD, pid, cmd, items);
-  }
-  rewardLogic2.sendReward = sendReward;
-  function doRewardAction(pid, ty, rws) {
-    if (getLog) {
-      console.log(`
-${pid} \u6536\u5230\u5956\u52B1\u7C7B\u578B ${ty} :
- ${JSON.stringify(rws)}`);
-    }
-    let map = Gameplay.isClient() ? actions_C : actions_S;
-    if (map.has(ty)) {
-      map.get(ty).forEach((act) => {
-        act(pid, rws);
-      });
-    }
-  }
-})(rewardLogic || (rewardLogic = {}));
-
-// JavaScripts/Data/Datacenter.ts
+// JavaScripts/TQ/tqBase/Datacenter.ts
 var Datacenter_exports = {};
 __export(Datacenter_exports, {
   Datacenter: () => Datacenter
@@ -878,12 +542,6 @@ var Datacenter;
   })(server = Datacenter2.server || (Datacenter2.server = {}));
 })(Datacenter || (Datacenter = {}));
 
-// JavaScripts/HYMGame.ts
-var HYMGame_exports = {};
-__export(HYMGame_exports, {
-  default: () => HYMGame
-});
-
 // JavaScripts/NewUI.ts
 var NewUI_exports = {};
 __export(NewUI_exports, {
@@ -895,6 +553,206 @@ var CreateModule_exports = {};
 __export(CreateModule_exports, {
   CreateModule: () => CreateModule
 });
+
+// JavaScripts/TQ/tqBase/NetManager.ts
+var NetManager_exports = {};
+__export(NetManager_exports, {
+  NetManager: () => NetManager,
+  NetModuleBase: () => NetModuleBase
+});
+var NetManager;
+((NetManager2) => {
+  const netInstanceObj = /* @__PURE__ */ new Map();
+  const EVENT_NETMGR_SEND_SERVER = "EVENT_NETMGR_SEND_SERVER";
+  const EVENT_NETMGR_SEND_CLIENT = "EVENT_NETMGR_SEND_CLIENT";
+  const EVENT_NETMGR_PLAYERENTER = "EVENT_NETMGR_PLAYERENTER";
+  const netRegistFunc = /* @__PURE__ */ new Map();
+  class sendClientPackage {
+    data;
+    cmdid;
+    errorid;
+  }
+  class sendServerPackage {
+    data;
+    cmdid;
+    pid;
+  }
+  const errorMap = /* @__PURE__ */ new Map();
+  function setErrorTips(errorid, tips) {
+    if (Gameplay.isClient()) {
+      errorMap.set(errorid, { errorid, act: tips });
+    }
+  }
+  NetManager2.setErrorTips = setErrorTips;
+  function sendNet(cmd, data, pid, errorid = 0) {
+    if (Gameplay.isServer()) {
+      let net = {
+        errorid,
+        data,
+        cmdid: cmd
+      };
+      if (pid) {
+        let p = Gameplay.getPlayer(pid);
+        if (p) {
+          Events.dispatchToClient(p, EVENT_NETMGR_SEND_CLIENT, net);
+        } else {
+          console.error("not find player:" + pid);
+        }
+      } else {
+        Events.dispatchToAllClient(EVENT_NETMGR_SEND_CLIENT, net);
+      }
+    }
+    if (Gameplay.isClient()) {
+      let locPlayer = Gameplay.getCurrentPlayer();
+      if (!locPlayer) {
+        console.error("current player notFind !");
+        return;
+      }
+      let net = {
+        data,
+        cmdid: cmd,
+        pid: locPlayer.getPlayerID()
+      };
+      Events.dispatchToServer(EVENT_NETMGR_SEND_SERVER, net);
+    }
+  }
+  NetManager2.sendNet = sendNet;
+  function initNetMgr() {
+    const curIsServer = Gameplay.isServer();
+    if (Gameplay.isServer()) {
+      Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p, net) => {
+        const netFunc = netRegistFunc.get(net.cmdid);
+        if (netFunc) {
+          for (let f of netFunc) {
+            let obj = netInstanceObj.get(f.objType);
+            if (!obj) {
+              continue;
+            }
+            try {
+              f.func.call(obj, net.pid, ...net.data);
+            } catch (error) {
+              console.error("net response error!");
+              console.error(error.stack);
+            }
+          }
+        }
+      });
+      Events.addClientListener(EVENT_NETMGR_PLAYERENTER, (p) => {
+        for (let [k, v] of netInstanceObj) {
+          v["playerEnter"](p.getPlayerID());
+        }
+      });
+    }
+    if (Gameplay.isClient()) {
+      Events.addServerListener(EVENT_NETMGR_SEND_CLIENT, (net) => {
+        if (errorMap.has(net.errorid)) {
+          let tip = errorMap.get(net.errorid);
+          if (typeof tip.act == "string") {
+            console.log(tip);
+          } else {
+            tip.act(net.errorid);
+          }
+        }
+        const netFunc = netRegistFunc.get(net.cmdid);
+        if (netFunc) {
+          for (let f of netFunc) {
+            let obj = netInstanceObj.get(f.objType);
+            if (!obj) {
+              continue;
+            }
+            try {
+              f.func.call(obj, ...net.data);
+            } catch (error) {
+              console.error("net response error!");
+              console.error(error.stack);
+            }
+          }
+        }
+      });
+    }
+    let modArray = [];
+    for (let [k, v] of netInstanceObj) {
+      modArray.push(v);
+    }
+    modArray.sort((a, b) => {
+      return b.getModuleIndex() - a.getModuleIndex();
+    });
+    modArray.forEach((m) => {
+      m["start"]();
+    });
+    if (Gameplay.isClient()) {
+      Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);
+    }
+  }
+  NetManager2.initNetMgr = initNetMgr;
+  let time = 0;
+  function update() {
+    const now = Date.now();
+    if (time == 0) {
+      time = now;
+    }
+    ;
+    for (let [k, v] of netInstanceObj) {
+      v["update"](now - time);
+    }
+    time = now;
+  }
+  NetManager2.update = update;
+  function netFlagClass(constructor) {
+    const netObj = new constructor();
+    netInstanceObj.set(constructor.name, netObj);
+  }
+  NetManager2.netFlagClass = netFlagClass;
+  function netFlagFunc(cmdid) {
+    return function(target, propertyRey, description) {
+      if (!description.value || typeof description.value != "function") {
+        return;
+      }
+      const className = target.constructor.name;
+      const func = description.value;
+      if (!netRegistFunc.has(cmdid)) {
+        netRegistFunc.set(cmdid, new Array());
+      }
+      let f = {
+        objType: className,
+        func,
+        cmdid
+      };
+      netRegistFunc.get(cmdid).push(f);
+    };
+  }
+  NetManager2.netFlagFunc = netFlagFunc;
+  function getModule(cls) {
+    if (netInstanceObj.has(cls.name)) {
+      return netInstanceObj.get(cls.name);
+    }
+    return null;
+  }
+  NetManager2.getModule = getModule;
+})(NetManager || (NetManager = {}));
+var NetModuleBase = class {
+  isServer = true;
+  constructor() {
+    this.isServer = Gameplay.isServer();
+    this.onAwake();
+  }
+  getModuleIndex() {
+    return 0;
+  }
+  onAwake() {
+  }
+  start() {
+    this.onStart();
+  }
+  update(dt) {
+    this.onUpdate(dt);
+  }
+  playerEnter(pid) {
+    this.onPlayerEnter(pid);
+  }
+  onPlayerEnter(pid) {
+  }
+};
 
 // JavaScripts/test/CreateModule/BuildingData.ts
 var BuildingData_exports = {};
@@ -1170,9 +1028,171 @@ test = __decorateClass([
 ], test);
 
 // build.ts
-var foreign12 = __toESM(require_ArrayExtFunc());
+var foreign7 = __toESM(require_Backpack());
+var foreign8 = __toESM(require_BackpackModule());
 
-// JavaScripts/Tools/EventTools.ts
+// JavaScripts/TQ/CommonLogic/RankLogic.ts
+var RankLogic_exports = {};
+__export(RankLogic_exports, {
+  RankLogic: () => RankLogic
+});
+var EVENT_RANK_REP = "EVENT_RANK_REP";
+var EVENT_RANK_REQ = "EVENT_RANK_REQ";
+var RankLogic = class {
+  C2S = true;
+  infoTypeName = null;
+  sortBasis = [];
+  constructor(infoName, isC2S = true) {
+    this.infoTypeName = infoName.name;
+    this.C2S = isC2S;
+    this.clientInit();
+    this.serverInit();
+  }
+  uiAct = null;
+  dataAct = null;
+  clientInit() {
+    let eventFunc = this.C2S ? Events.addServerListener : Events.addLocalListener;
+    eventFunc(`${EVENT_RANK_REP}_${this.infoTypeName}`, (infos) => {
+      if (this.uiAct) {
+        if (this.sortBasis.length > 0) {
+          infos.sort((a, b) => {
+            for (let i = 0; i < this.sortBasis.length; i++) {
+              const isUp = this.sortBasis[i][2];
+              const ka = this.sortBasis[i][0];
+              const kb = this.sortBasis[i][0];
+              if (a[ka] == null || a[ka] == void 0 || b[kb] == null || b[kb] == void 0) {
+                continue;
+              }
+              if (a[ka] == b[kb]) {
+                continue;
+              }
+              let [na, nb] = [Number(a[ka]), Number(b[kb])];
+              if (Number.isNaN(na) || Number.isNaN(nb)) {
+                continue;
+              }
+              return isUp ? nb - na : na - nb;
+            }
+            return 0;
+          });
+        }
+        this.uiAct(infos);
+      }
+    });
+  }
+  serverInit() {
+    if (this.C2S) {
+      Events.addClientListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, (player) => {
+        this.sendRank(player);
+      });
+    } else {
+      Events.addLocalListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, () => {
+        let data = this.dataAct ? this.dataAct() : [];
+        Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+      });
+    }
+  }
+  requestRank() {
+    if (Gameplay.isClient()) {
+      if (this.C2S) {
+        Events.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
+      } else {
+        Events.dispatchLocal(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
+      }
+    }
+  }
+  sendRank(pid, data) {
+    if (!data) {
+      data = this.dataAct ? this.dataAct() : [];
+    }
+    if (data.length <= 0) {
+      return;
+    }
+    if (this.C2S && Gameplay.isServer()) {
+      let p = pid instanceof Gameplay.Player ? pid : Gameplay.getPlayer(pid);
+      Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+    } else {
+      Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+    }
+  }
+  sendAllRank(data) {
+    if (!this.C2S || Gameplay.isClient()) {
+      return;
+    }
+    if (!data) {
+      data = this.dataAct ? this.dataAct() : [];
+    }
+    Gameplay.getAllPlayers().forEach((p) => {
+      Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+    });
+  }
+  setClientAction(action) {
+    this.uiAct = action;
+  }
+  setCreateData(action) {
+    this.dataAct = action;
+  }
+  setSortBasis(...basis) {
+    this.sortBasis.length = 0;
+    basis.sort((a, b) => {
+      return b[1] - a[1];
+    });
+    this.sortBasis.push(...basis);
+  }
+};
+
+// JavaScripts/TQ/CommonLogic/RewardModule.ts
+var RewardModule_exports = {};
+__export(RewardModule_exports, {
+  rewardLogic: () => rewardLogic
+});
+var rewardLogic;
+((rewardLogic2) => {
+  const EVENT_RECEIVE_REWARD = "EVENT_RECEIVE_REWARD";
+  let getLog = false;
+  let actions_C = /* @__PURE__ */ new Map();
+  let actions_S = /* @__PURE__ */ new Map();
+  function setReceiveFunc(cmd, act) {
+    let map = Gameplay.isClient() ? actions_C : actions_S;
+    if (!map.has(cmd)) {
+      map.set(cmd, []);
+    }
+    map.get(cmd).push(act);
+  }
+  rewardLogic2.setReceiveFunc = setReceiveFunc;
+  function initRewardAct(log = false) {
+    if (Gameplay.isClient()) {
+      Events.addServerListener(EVENT_RECEIVE_REWARD, doRewardAction);
+    }
+    getLog = log;
+  }
+  rewardLogic2.initRewardAct = initRewardAct;
+  function sendReward(pid, cmd, ...items) {
+    if (Gameplay.isClient()) {
+      return;
+    }
+    doRewardAction(pid, cmd, items);
+    Events.dispatchToClient(Gameplay.getPlayer(pid), EVENT_RECEIVE_REWARD, pid, cmd, items);
+  }
+  rewardLogic2.sendReward = sendReward;
+  function doRewardAction(pid, ty, rws) {
+    if (getLog) {
+      console.log(`
+${pid} \u6536\u5230\u5956\u52B1\u7C7B\u578B ${ty} :
+ ${JSON.stringify(rws)}`);
+    }
+    let map = Gameplay.isClient() ? actions_C : actions_S;
+    if (map.has(ty)) {
+      map.get(ty).forEach((act) => {
+        act(pid, rws);
+      });
+    }
+  }
+})(rewardLogic || (rewardLogic = {}));
+
+// build.ts
+var foreign11 = __toESM(require_ArrayExtFunc());
+
+// JavaScripts/TQ/Tools/EventTools.ts
 var EventTools_exports = {};
 __export(EventTools_exports, {
   EventTools: () => EventTools
@@ -1274,7 +1294,7 @@ var EventTools;
   }
 })(EventTools || (EventTools = {}));
 
-// JavaScripts/Tools/ExtensionType.ts
+// JavaScripts/TQ/Tools/ExtensionType.ts
 var ExtensionType_exports = {};
 __export(ExtensionType_exports, {
   Action: () => Action,
@@ -1412,7 +1432,7 @@ function widgetToUIElement(EleClass, widget) {
   return element;
 }
 
-// JavaScripts/Tools/ObjectMaterial.ts
+// JavaScripts/TQ/Tools/ObjectMaterial.ts
 var ObjectMaterial_exports = {};
 __export(ObjectMaterial_exports, {
   SceneObjectSync: () => SceneObjectSync
@@ -1567,7 +1587,85 @@ var _SceneObjectSync = class {
 var SceneObjectSync = _SceneObjectSync;
 __publicField(SceneObjectSync, "_ins", null);
 
-// JavaScripts/Tools/Tools.ts
+// JavaScripts/TQ/Tools/StateMachine.ts
+var StateMachine_exports = {};
+__export(StateMachine_exports, {
+  StateMachine: () => StateMachine
+});
+var StateFunc = class {
+  enter;
+  update;
+  exit;
+};
+var StateMachine = class {
+  _states;
+  currentState;
+  constructor() {
+    this._states = /* @__PURE__ */ new Map();
+  }
+  register(state, func) {
+    this._states.set(state, func);
+  }
+  registerEnter(state, enter) {
+    let has = this._states.has(state);
+    if (has) {
+      let func = this._states.get(state);
+      func.enter = enter;
+    } else {
+      let func = new StateFunc();
+      func.enter = enter;
+      this._states.set(state, func);
+    }
+  }
+  registerUpdate(state, update) {
+    let has = this._states.has(state);
+    if (has) {
+      let func = this._states.get(state);
+      func.update = update;
+    } else {
+      let func = new StateFunc();
+      func.update = update;
+      this._states.set(state, func);
+    }
+  }
+  registerExit(state, exit) {
+    let has = this._states.has(state);
+    if (has) {
+      let func = this._states.get(state);
+      func.exit = exit;
+    } else {
+      let func = new StateFunc();
+      func.exit = exit;
+      this._states.set(state, func);
+    }
+  }
+  update(dt) {
+    if (this.currentState) {
+      let func = this._states.get(this.currentState);
+      func.update && func.update(dt);
+    }
+  }
+  switch(state, data) {
+    if (!this._states.has(state)) {
+      return;
+    }
+    if (this.currentState) {
+      let func2 = this._states.get(this.currentState);
+      func2.exit && func2.exit();
+    }
+    this.currentState = state;
+    let func = this._states.get(state);
+    func.enter && func.enter(data);
+  }
+  destroy() {
+    this._states.clear();
+  }
+  getState() {
+    return this.currentState;
+  }
+};
+
+// JavaScripts/TQ/Tools/Tools.ts
 var Tools_exports = {};
 __export(Tools_exports, {
   Tools: () => Tools
@@ -1576,7 +1674,283 @@ var Tools = class {
   static sleep(time) {
     return new Promise((resolve) => setTimeout(resolve, time));
   }
+  static FormatString(text, ...args) {
+    return text.replace(/\{(\d+)\}/g, (text2, index, ...parms) => {
+      if (args[index] === 0)
+        return 0;
+      return args[index] || "undefined";
+    });
+  }
+  static Seconds2Hour(second) {
+    let minutes = second % 3600;
+    let h = Math.floor(second / 3600);
+    let m = Math.floor(minutes / 60);
+    let s = minutes % 60;
+    return [h, m, s];
+  }
+  static RoundNumber(value, min, max) {
+    if (value > max)
+      return max;
+    if (value < min)
+      return min;
+    return value;
+  }
+  static NumLerp(n1, n2, lerp) {
+    return n1 + (n2 - n1) * lerp;
+  }
+  static LerpVector(v1, v2, lerp) {
+    if (lerp > 1) {
+      lerp = 1;
+    }
+    if (lerp < 0) {
+      lerp = 0;
+    }
+    let result = new Type.Vector(0, 0, 0);
+    result.x = this.NumLerp(v1.x, v2.x, lerp);
+    result.y = this.NumLerp(v1.y, v2.y, lerp);
+    result.z = this.NumLerp(v1.z, v2.z, lerp);
+    return result;
+  }
+  static Distance(from, to, isPlane = false) {
+    let x1 = from.x;
+    let y1 = from.y;
+    let z1 = from.z;
+    let x2 = to.x;
+    let y2 = to.y;
+    let z2 = to.z;
+    let distance;
+    let num = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+    if (!isPlane) {
+      num += (z1 - z2) * (z1 - z2);
+    }
+    distance = Math.sqrt(num);
+    if (distance < 0) {
+      distance = 0;
+    }
+    return distance;
+  }
+  static DistancePow(from, to, isPlane = false) {
+    let x1 = from.x;
+    let y1 = from.y;
+    let z1 = from.z;
+    let x2 = to.x;
+    let y2 = to.y;
+    let z2 = to.z;
+    let distance = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+    if (!isPlane) {
+      distance += (z1 - z2) * (z1 - z2);
+    }
+    if (distance < 0) {
+      distance = 0;
+    }
+    return distance;
+  }
+  static CheckRect(p1, p2, checkDis, isPlane = false) {
+    if (Math.abs(p1.x - p2.x) > checkDis) {
+      return false;
+    }
+    if (Math.abs(p1.y - p2.y) > checkDis) {
+      return false;
+    }
+    if (!isPlane) {
+      if (Math.abs(p1.z - p2.z) > checkDis) {
+        return false;
+      }
+    }
+    return true;
+  }
+  static RandomFloat(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+  static RandomeInt(min, max) {
+    return Math.floor(Tools.RandomFloat(min, max));
+  }
+  static async asyncFind(guid, wait = 1e4) {
+    if (!guid) {
+      return null;
+    }
+    let ret = Core.GameObject.find(guid);
+    let t = Math.max(100, wait);
+    while (!ret && t > 0) {
+      t -= 100;
+      await Tools.sleep(100);
+      ret = Core.GameObject.find(guid);
+    }
+    return ret;
+  }
+  static DumpObject(object, showFunc = false, deep = 5) {
+    if (object == null || object == void 0) {
+      if (typeof object == "object") {
+        return "null";
+      }
+      return String(object);
+    }
+    if (typeof object != "object") {
+      return String(object);
+    }
+    deep = Math.min(5, deep);
+    let spaceLength = Math.abs(deep - 5) * 2;
+    let space = "";
+    for (let i = 0; i < spaceLength; i++) {
+      space += " ";
+    }
+    let result = "\n" + space + "{";
+    if (object instanceof Map) {
+      result += "\n" + space;
+      if (deep <= 0) {
+        result += `(Map):${object}`;
+      } else {
+        result += "(Map):";
+        for (let key of object.keys()) {
+          result += "\n" + space + ` [${key}]:${Tools.DumpObject(object.get(key), showFunc, deep - 1)}`;
+        }
+      }
+    } else {
+      for (let k in object) {
+        if (object[k] instanceof Map) {
+          result += "\n" + space;
+          if (deep <= 0) {
+            result += `${k}(Map):${object[k]}`;
+          } else {
+            result += k + "(Map):";
+            for (let key of object[k].keys()) {
+              result += "\n" + space + ` [${key}]:${Tools.DumpObject(object[k].get(key), showFunc, deep - 1)}`;
+            }
+          }
+        } else if (typeof object[k] == "object") {
+          result += "\n" + space;
+          if (deep <= 0) {
+            result += `${k}:${object[k]}`;
+          } else {
+            result += `${k}:${Tools.DumpObject(object[k], showFunc, deep - 1)}`;
+          }
+        } else if (typeof object[k] == "function") {
+          if (showFunc) {
+            result += "\n" + space;
+            result += `${k}:function`;
+          } else {
+            continue;
+          }
+        } else {
+          result += "\n" + space;
+          result += `${k}:${object[k]}`;
+        }
+      }
+    }
+    result += "\n" + space + "}";
+    return result;
+  }
+  static createTriggerToGameObject(gameObject, useSelf = true, sync = false) {
+    let trigger = null;
+    if (gameObject instanceof Gameplay.Trigger && useSelf) {
+      trigger = gameObject;
+    } else {
+      trigger = Core.GameObject.spawnGameObject("113", sync);
+      trigger.name = gameObject.name + "_Trigger";
+      trigger.worldScale = gameObject.worldScale.multiply(1.2);
+      trigger.attachToGameObject(gameObject);
+      trigger.setRelativeLocation(new Type.Vector(0, 0, 50));
+      trigger.setRelativeRotation(Type.Rotation.zero);
+    }
+    return trigger;
+  }
+  static getAllChild(parent, deep = 5, property = null) {
+    if (parent.getChildren().length <= 0 || deep <= 0) {
+      return null;
+    } else {
+      let result = [];
+      for (let c of parent.getChildren()) {
+        if (property) {
+          result.push(c[property]);
+        } else {
+          result.push(c);
+        }
+        let cc = this.getAllChild(c, deep - 1, property);
+        if (cc != null) {
+          result = result.concat(cc);
+        }
+      }
+      return result;
+    }
+  }
+  static Bezier(points, lerp) {
+    lerp = this.RoundNumber(lerp, 0, 1);
+    if (points.length == 2) {
+      return this.LerpVector(points[0], points[1], lerp);
+    }
+    let nextArray = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      let pointA = points[i];
+      let pointB = points[i + 1];
+      let lerpPoint = this.LerpVector(pointA, pointB, lerp);
+      nextArray.push(lerpPoint);
+    }
+    return this.Bezier(nextArray, lerp);
+  }
+  static getCirclePoints(center, radius, step) {
+    let result = [];
+    let z = center.z;
+    let [x0, y0] = [center.x, center.y];
+    for (let angle = 0; angle < 360; angle += step) {
+      let radian = angle * 2 * (Math.PI / 360);
+      let x = x0 + radius * Math.cos(radian);
+      let y = y0 + radius * Math.sin(radian);
+      result.push(new Type.Vector(x, y, z));
+    }
+    return result;
+  }
 };
+
+// JavaScripts/TQ/TQGameStart.ts
+var TQGameStart_exports = {};
+__export(TQGameStart_exports, {
+  TQGameStart: () => TQGameStart
+});
+var _TQGameStart = class extends Core.Script {
+  static get instance() {
+    return _TQGameStart._instance;
+  }
+  preloadAssets = "";
+  _isOnline = false;
+  _customUpdateAct = new Action1();
+  async onStart() {
+    if (!_TQGameStart._instance) {
+      _TQGameStart._instance = this;
+    }
+    this.UIinit();
+    await Datacenter.init(this._isOnline, ...this.getDataClass());
+    NetManager.initNetMgr();
+    this.useUpdate = true;
+  }
+  onUpdate(dt) {
+    NetManager.update();
+    this._customUpdateAct.call(dt);
+  }
+  onDestroy() {
+  }
+  UIinit() {
+    if (Gameplay.isClient()) {
+      Extension.UIManager.getInstance(Extension.UIManager);
+      if (this.firstUI) {
+        Extension.UIManager.instance.show(this.firstUI);
+      }
+    }
+  }
+  addCustomAct(act, thisArg) {
+    this._customUpdateAct.add(act, thisArg);
+  }
+  removeCustomAct(act, thisArg) {
+    this._customUpdateAct.remove(act, thisArg);
+  }
+};
+var TQGameStart = _TQGameStart;
+__publicField(TQGameStart, "_instance", null);
+__decorateClass([
+  Core.Property()
+], TQGameStart.prototype, "preloadAssets", 2);
+__decorateClass([
+  Core.Property()
+], TQGameStart.prototype, "_isOnline", 2);
 
 // JavaScripts/TQ/ui/BulletChatUI.ts
 var BulletChatUI_exports = {};
@@ -2495,22 +2869,25 @@ UIDefault = __decorateClass([
 // build.ts
 var MWModuleMap = {
   "build": build_exports,
-  "JavaScripts/CommonLogic/BackpackModule": foreign1,
-  "JavaScripts/CommonLogic/NetManager": NetManager_exports,
-  "JavaScripts/CommonLogic/RankLogic": RankLogic_exports,
-  "JavaScripts/CommonLogic/RewardModule": RewardModule_exports,
-  "JavaScripts/Data/Datacenter": Datacenter_exports,
   "JavaScripts/HYMGame": HYMGame_exports,
   "JavaScripts/NewScript": NewScript_exports,
   "JavaScripts/NewUI": NewUI_exports,
   "JavaScripts/test/CreateModule/BuildingData": BuildingData_exports,
   "JavaScripts/test/CreateModule/CreateModule": CreateModule_exports,
   "JavaScripts/test/test": test_exports,
-  "JavaScripts/Tools/ArrayExtFunc": foreign12,
-  "JavaScripts/Tools/EventTools": EventTools_exports,
-  "JavaScripts/Tools/ExtensionType": ExtensionType_exports,
-  "JavaScripts/Tools/ObjectMaterial": ObjectMaterial_exports,
-  "JavaScripts/Tools/Tools": Tools_exports,
+  "JavaScripts/TQ/CommonLogic/Backpack": foreign7,
+  "JavaScripts/TQ/CommonLogic/BackpackModule": foreign8,
+  "JavaScripts/TQ/CommonLogic/RankLogic": RankLogic_exports,
+  "JavaScripts/TQ/CommonLogic/RewardModule": RewardModule_exports,
+  "JavaScripts/TQ/Tools/ArrayExtFunc": foreign11,
+  "JavaScripts/TQ/Tools/EventTools": EventTools_exports,
+  "JavaScripts/TQ/Tools/ExtensionType": ExtensionType_exports,
+  "JavaScripts/TQ/Tools/ObjectMaterial": ObjectMaterial_exports,
+  "JavaScripts/TQ/Tools/StateMachine": StateMachine_exports,
+  "JavaScripts/TQ/Tools/Tools": Tools_exports,
+  "JavaScripts/TQ/tqBase/Datacenter": Datacenter_exports,
+  "JavaScripts/TQ/tqBase/NetManager": NetManager_exports,
+  "JavaScripts/TQ/TQGameStart": TQGameStart_exports,
   "JavaScripts/TQ/ui/BulletChatUI": BulletChatUI_exports,
   "JavaScripts/TQ/ui/LoadingUI": LoadingUI_exports,
   "JavaScripts/ui-generate/NewUI_generate": NewUI_generate_exports,
