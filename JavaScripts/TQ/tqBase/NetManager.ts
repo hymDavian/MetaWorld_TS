@@ -40,7 +40,7 @@ export namespace NetManager {
 
     /**发送网络数据 不会触发同端的对应cmd函数
      * 例如，如果在客户端合服务器都定义了cmd 1 的函数，如果是客户端执行sendNet，只会调用服务器的 cmd 1 的函数，同理服务器也只会通知客户端的cmd 1
-     * 
+     * 要执行同端函数，可以自行getModule直接调用
      * @param cmd 操作ID
      * @param data 数据
      * @param pid [server]发送给谁
@@ -165,7 +165,8 @@ export namespace NetManager {
         if (time == 0) { time = now };
         const curIsServer: boolean = Gameplay.isServer();
         for (let [k, v] of netInstanceObj) {
-            if (v.netLocation == ModuleNetLocation.P2P) {
+            if (!v.useUpdate) { continue; }
+            if (v.netLocation == ModuleNetLocation.P2P) {//双端模块无视环境一定执行
                 v["update"](now - time);
             }
             else {
@@ -258,10 +259,11 @@ export abstract class NetModuleBase {
     /**网络初始化完毕后调用 */
     protected abstract onStart();
 
+    /**是否执行帧更新逻辑 */
+    public useUpdate: boolean = true;
     private update(dt: number) {
         this.onUpdate(dt);
     }
-
     /**
      * 帧逻辑
      * @param dt 与上一帧间隔(ms)
@@ -271,7 +273,6 @@ export abstract class NetModuleBase {
     private playerEnter(pid: number) {
         this.onPlayerEnter(pid);
     }
-
     /**[server] 仅服务器触发，任意玩家进入游戏*/
     protected onPlayerEnter(pid: number) {
 

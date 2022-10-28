@@ -80,7 +80,7 @@ export namespace Datacenter {
         }
 
         /**如何处理来自数据库的加载数据,如果不存在此数据，会是{} */
-        public abstract initData(dataSet: any);
+        public abstract initData(dataSet: unknown);
 
         /**[server] 保存到硬盘 本质上是保存此玩家的所有数据,仅服务器能执行 */
         public save() {
@@ -106,7 +106,7 @@ export namespace Datacenter {
         public abstract clearMyData();
 
         /**执行数据保存或同步时，实际保存到硬盘的就是此get属性的返回值 */
-        public abstract get myData(): any;
+        public abstract get myData(): unknown;
     }
 
 
