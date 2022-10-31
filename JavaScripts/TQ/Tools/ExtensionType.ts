@@ -108,7 +108,7 @@ export class TabGroup<T extends { onClicked: Common.MulticastDelegate<() => void
 /**
 * 根据类型和路径查找子对象
 * @param ChildType 子对象的类型
-* @param path 节点路径
+* @param path 节点路径(不带canvas本身)
 * @returns 子节点对象
 */
 export function findChildByPath<T extends UI.Widget>(canvas: UI.Canvas, ChildType: { new(...param: any[]): T }, path: string): T {
@@ -118,10 +118,10 @@ export function findChildByPath<T extends UI.Widget>(canvas: UI.Canvas, ChildTyp
         return null;
     }
     let widget: unknown = child as T;//ChildType.get(child);
-    if (ChildType.name == UI.Button.name || ChildType.name == UI.Button.name) {
-        (widget as any).setFocusable(false);//设置了这个 按钮就不会按下后自动抛出抬起事件了
-        (widget as any).setTouchMethod(UI.ButtonTouchMethod.PreciseTap);//设置了这个后 滑动列表里的按钮不用再单独设置了
-    }
+    // if (ChildType.name == UI.Button.name || ChildType.name == UI.Button.name) {
+    //     (widget as any).setFocusable(false);//设置了这个 按钮就不会按下后自动抛出抬起事件了
+    //     (widget as any).setTouchMethod(UI.ButtonTouchMethod.PreciseTap);//设置了这个后 滑动列表里的按钮不用再单独设置了
+    // }
     return widget as T;
 }
 
