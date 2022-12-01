@@ -37,8 +37,15 @@ export namespace worldUIMgr {
         return result;
     }
 
-    /**获取并显示一个3dUI */
-    export function getWorldUI<T extends baseWorldui>(ty: uiType, uiprefab: string, space: Gameplay.WidgetSpaceMode, uisize: size): T {
+    /**获取并显示一个3dUI
+     * 
+     * @param ty 世界ui使用的逻辑类class
+     * @param uiprefab ui资源guid
+     * @param space ui空间位置类型
+     * @param uisize ui大小 [x,y] 默认[100,100]
+     * @returns 
+     */
+    export function getWorldUI<T extends baseWorldui>(ty: uiType, uiprefab: string, space: Gameplay.WidgetSpaceMode, uisize: size = [100, 100]): T {
         let typeName = uiprefab + ty.name;//根据资源id和ui使用的类名，组成一个 类型唯一识别字符串
         let result: baseWorldui = null;
         if (_hideUiDic.has(typeName))//先从回收站取

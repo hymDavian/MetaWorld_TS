@@ -1,18 +1,19 @@
-
-class LodPanelClass extends UI.UIBehaviour {
+/**基于不与其他任何脚本耦合，实现自我逻辑自洽的虚Loading基类 */
+abstract class LodPanelClass extends UI.UIBehaviour {
     img_bg: UI.Image;
     txt_des: UI.TextBlock;
     slider_progress: UI.ProgressBar;
-    btn_Enter: UI.Button;
 }
-type cc = {
+/**Loading虚基类承载的类型参数 */
+type LoadingType = {
     new(...args: any[]): LodPanelClass
 }
+/**通用的loadingUI纯逻辑脚本 */
 export class LoadingUI {
 
     private constructor() { }
-    //初始化，注册要使用的UI类类型
-    public init(cls: cc) {
+    /**初始化，注册要使用的UI类类型 */
+    public init(cls: LoadingType) {
         this.uiClass = cls;
     }
 
@@ -24,7 +25,7 @@ export class LoadingUI {
         return LoadingUI._ins;
     }
 
-    private uiClass: cc = null;
+    private uiClass: LoadingType = null;
     private loadingUI: LodPanelClass = null;
     public get isShow(): boolean {
         return this.loadingUI ? this.loadingUI.visible : false;
@@ -32,11 +33,17 @@ export class LoadingUI {
 
     public open(): LoadingUI {
         if (this.loadingUI && this.loadingUI.visible) { return; }
+        if (!this.uiClass) {
+            console.error("没有提供loadingUI类型！");
+        }
         if (this.loadingUI == null) {
             this.loadingUI = Extension.UIManager.instance.create(this.uiClass);// this.uiClass.creat();
-            let UIupdate = this.loadingUI["onUpdate"];
+            this.loadingUI.canUpdate = true;
+            let UIupdate: (dt: number) => void = this.loadingUI["onUpdate"];
             this.loadingUI["onUpdate"] = function (dt: number) {
-                UIupdate(dt);
+                if (UIupdate) {
+                    UIupdate(dt);
+                }
                 LoadingUI._ins.update(dt);
             }
             this.loadingUI.slider_progress.sliderMinValue = 0;//.setSliderMinValue(0);
@@ -78,7 +85,7 @@ export class LoadingUI {
 
     private lastSetCompAction: () => void = null;
     /**设置进度条走完后要干的事情 */
-    public setCompeleteAct(callback: () => {}): LoadingUI {
+    public setCompeleteAct(callback: () => void): LoadingUI {
         this.lastSetCompAction = callback;
         return this
     }
@@ -132,7 +139,6 @@ export class LoadingUI {
                     } catch (error) {
                         console.log("loading error:" + error);
                     }
-
                     this.lastSetCompAction = null;
                 }
                 Extension.UIManager.instance.hideUI(this.loadingUI);

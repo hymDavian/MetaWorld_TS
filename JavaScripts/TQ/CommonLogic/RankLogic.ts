@@ -1,4 +1,4 @@
-import { Class } from "../Tools/Tools";
+type Class<T> = { new(...args: any[]): T }
 
 const EVENT_RANK_REP = "EVENT_RANK_REP";
 const EVENT_RANK_REQ = "EVENT_RANK_REQ";

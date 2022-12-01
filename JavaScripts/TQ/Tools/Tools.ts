@@ -317,6 +317,68 @@ export class Tools {
         }
         return result;
     }
+
+    /**检查并强制加载相关资源然后生成物体 */
+    public static async checkAssetSpawnObject<T extends Core.GameObject>(asset: string, bInReplicates: boolean = false) {
+        let ret: T = null;
+        if (!Core.isAssetLoaded(asset)) {
+            await Core.asyncDownloadAsset(asset);
+            Core.loadAsset(asset);
+        }
+        ret = await Core.GameObject.spawnGameObject(asset, bInReplicates).ready() as T;
+        return ret;
+    }
+
+    /**下载并加载所有用到的资源
+     * 
+     * @param assets 需要下载的资源ID
+     * @param step 每单步次下载的最大资源数
+     * @param callback 下载进度回调 (进度值，接下来下载的资源组)
+     * @returns 
+     */
+    public static async downLoadAllAsset(assets: string[], step: number = 10, callback: (progress: number, nextasset?: string) => void = null) {
+        if (!assets || assets.length <= 0) {
+            callback && callback(1, "");
+            return;
+        }
+        let pro = 0;//进度值
+        let arr = [];
+        let count = 0;
+        for (let i = 0; i < assets.length; i++) {
+            const guid = assets[i];
+
+            if (!Core.isAssetLoaded(guid)) {
+                arr.push(Core.asyncDownloadAsset(guid));
+                count++;
+            }
+            if (count >= step || i >= assets.length - 1) {
+                await Promise.all(arr);
+                arr.length = 0;
+                count = 0;
+            }
+            pro = (i + 1) / assets.length;
+            callback && callback(pro, (i < assets.length - 1) ? assets.slice(i + 1, i + 11).toString() : "");
+        }
+        assets.forEach(val => {
+            Core.loadAsset(val);
+        })
+    }
+
+
+    /**通过一组权重值组，随机获取这组权重值对应的索引，权重值越高，取到几率越高 */
+    static randomItemRange(ranges: number[]): number {
+        let sum = ranges.reduce((pr, current) => {
+            return pr + current;
+        }, 0);
+        let ran = this.RandomeInt(0, sum);
+        for (let i = 0; i < ranges.length; i++) {
+            if (ranges[i] > ran) {
+                return i;
+            }
+            ran -= ranges[i];
+        }
+        return ranges.length - 1;
+    }
 }
 
 const SINGLETON_KEY = Symbol();

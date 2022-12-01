@@ -9,13 +9,6 @@ export abstract class TQGameStart extends Core.Script {
     public static get instance(): TQGameStart {
         return TQGameStart._instance;
     }
-
-    @Core.Property()
-    public preloadAssets: string = "";//预加载字符串
-    @Core.Property()
-    private _isOnline: boolean = false;//是否线上存储
-
-
     private _customUpdateAct: Action1<number> = new Action1();//其他逻辑中加入的帧更新逻辑
 
     /** 当脚本被实例后，会在第一帧更新前调用此函数 */
@@ -24,7 +17,7 @@ export abstract class TQGameStart extends Core.Script {
             TQGameStart._instance = this;
         }
         this.UIinit();//客户端初始化UI
-        await Datacenter.init(this._isOnline, ...this.getDataClass());//数据层初始化
+        await Datacenter.init(Global.isMobile(), ...this.getDataClass());//数据层初始化
         NetManager.initNetMgr();//网络传输层初始化
         this.useUpdate = true;//主循环脚本驱动更新
     }
@@ -32,8 +25,7 @@ export abstract class TQGameStart extends Core.Script {
 
 
     /** 
-     * 每帧被执行,与上一帧的延迟 dt 秒
-     * 此函数执行需要将this.bUseUpdate赋值为true
+     * 会驱动CustomAct,NetManager,Tween
      */
     protected onUpdate(dt: number): void {
         NetManager.update();
