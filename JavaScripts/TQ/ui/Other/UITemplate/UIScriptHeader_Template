@@ -13,6 +13,12 @@
  export default class ${ClassName}_Generate extends ${SuperClassName} {
 	 ${Fileds}
  
+	protected onAwake() {
+		//设置能否每帧触发onUpdate
+		this.canUpdate = false;
+		this.layer = Extension.UILayerBottom;
+		this.initButtons();
+	}
 	protected initButtons() {
 		//按钮添加点击
 		${StaleButton_Start}
@@ -32,7 +38,7 @@
 
 		//按钮多语言
 		${StaleButton_HideStart}
-		this.initLanguage(this.rootcanvas.findChildByPath("${StaleButton_Path}") as any);
+		this.initLanguage(this.uiWidgetBase.findChildByPath("${StaleButton_Path}") as any);
 		${StaleButton_HideEnd}
 		//文本多语言
 		${TextBlock_Start}
@@ -40,7 +46,7 @@
 		${TextBlock_End}
 		//文本多语言
 		${TextBlock_HideStart}
-		this.initLanguage(this.rootcanvas.findChildByPath("${TextBlock_Path}") as any);
+		this.initLanguage(this.uiWidgetBase.findChildByPath("${TextBlock_Path}") as any);
 		${TextBlock_HideEnd}
 
 	}
@@ -49,6 +55,30 @@
         if (call && ui) {
             call(ui);
         }
+    }
+
+	/**查找根节点下的UI物体 */
+    protected findChildByPath<T extends UI.Widget>(EleClass: { new(): T }, inPath: string): T {
+        const find = this.rootcanvas.findChildByPath(inPath);
+        if (!find) { return null; }
+        return find as T;
+    }
+
+	/**隐藏自身 */
+	protected hide(){
+		Extension.UIManager.instance.hideUI(this);
+	}
+
+	/**查找嵌套的预制体UI的子物体 */
+    protected findPrefabBtn<T extends UI.Widget>(prefab:UI.UserWidget,inPath:string,uiClass:{new ():T}):T{
+        let find = prefab.rootContent.findChildByPath(inPath);
+        let ret = find ? (find as T):null;
+        return ret;
+    }
+
+	/**是否正在显示 */
+	public get isShow():boolean{
+        return Extension.UIManager.instance.isShow(this);
     }
  }
  

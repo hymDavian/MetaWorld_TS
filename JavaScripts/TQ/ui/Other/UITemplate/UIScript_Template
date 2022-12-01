@@ -4,19 +4,19 @@
  * TIME: ${Time}
  */
 
- import ${ClassName}_Generate from "./${FileName}_Generate/${FileName}_Generate";
+ import ${ClassName}_Generate from "${ImportGenerate}";
 
  export default class ${ClassName} extends ${ClassName}_Generate {
  
 	/** 
 	* 构造UI文件成功后，在合适的时机最先初始化一次 
 	*/
-	protected onAwake() {
-		//设置能否每帧触发onUpdate
-		this.canUpdate = false;
-		this.layer = Extension.UILayerBottom;
-		this.initButtons();
-	}
+	 protected onAwake() {
+	 	//设置能否每帧触发onUpdate
+	 	this.canUpdate = false;
+	 	this.layer = Extension.UILayerBottom;
+	 	this.initButtons();
+	 }
  
 	/** 
 	* 构造UI文件成功后，onStart之后 

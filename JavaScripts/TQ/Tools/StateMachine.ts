@@ -100,6 +100,7 @@ export class StateMachine<T> {
     */
     public switch(state: T, data?: unknown): void {
         if (!this._states.has(state)) {
+            // Date.now()
             return
         }
 
