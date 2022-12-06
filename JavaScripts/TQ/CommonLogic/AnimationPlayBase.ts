@@ -6,7 +6,7 @@ type playInfo = {
     loop?: boolean,
     /**播放速度 */
     speed?: number,
-    /**完结回调 */
+    /**完结回调,如果是个姿态，此项无效 */
     finish?: () => void,
     /**是否强制执行 */
     execute?: boolean,
@@ -15,19 +15,20 @@ type playInfo = {
 }
 /**动画播放基类 */
 export abstract class AnimationPlayBase {
-    protected get _asset(): string {
-        return this["asset"];
-    }
-    protected get _level(): EAnimationLevel {
-        return this["level"];
-    }
-    private static aniObjMap: Map<string, AnimationPlayBase> = new Map();
-    private static getAniByClass<T extends AnimationPlayBase>(cls: Class<T>): T {
-        if (!AnimationPlayBase.aniObjMap.has(cls.name)) {
-            const ani = new cls();
-            AnimationPlayBase.aniObjMap.set(cls.name, ani);
+    /**获取某个角色当前正在执行的动画级别 */
+    public static getCurAnimationLevel(roleid: number): EAnimationLevel {
+        if (!curAnimationState.has(roleid)) {
+            return EAnimationLevel.Normal;
         }
-        return AnimationPlayBase.aniObjMap.get(cls.name) as T;
+        return curAnimationState.get(roleid).level;
+    }
+    private static _aniObjMap: Map<string, AnimationPlayBase> = new Map();
+    private static getAniByClass<T extends AnimationPlayBase>(cls: Class<T>): T {
+        if (!AnimationPlayBase._aniObjMap.has(cls.name)) {
+            const ani = new cls();
+            AnimationPlayBase._aniObjMap.set(cls.name, ani);
+        }
+        return AnimationPlayBase._aniObjMap.get(cls.name) as T;
     }
     private static findObject: findObjectFunc = null;//如何去根据ID拿到动画播放者角色的方式
     /**初始化注册根据ID查找角色的方式 */
@@ -47,12 +48,20 @@ export abstract class AnimationPlayBase {
         if (!info || !info.execute) {//没有额外执行参数，或不需要强制执行
             //正常判断动画等级
             const oldAni = curAnimationState.has(objID) ? curAnimationState.get(objID) : null;//以前播放的动画
-            if (oldAni && curAni._level < oldAni._level) {//此动画的优先级低于此角色当前动画的等级
-                return false;
+            if (oldAni) {
+                if (curAni.level < oldAni.level) {//此动画的优先级低于此角色当前动画的等级
+                    return false;
+                }
+                else {
+                    if (oldAni.bStance == curAni.bStance) {//如果是姿态或动画间替换
+                        oldAni.toStop(objID);//先停止这个前动画
+                    }
+                }
             }
         }
         curAni.toPlay(objID, info);
         curAnimationState.set(objID, curAni);//设置到新动画
+        console.log(`${objID} 动画级别切换到：${curAni.level}`)
         return true;
     }
 
@@ -73,9 +82,15 @@ export abstract class AnimationPlayBase {
     private toPlay(objID: number, info?: playInfo) {
         const obj = AnimationPlayBase.findObject(objID);
         if (!obj) { return; }
-        this.onPlayBegin(obj, objID);
-        if (this._asset && this._asset.length > 0) {
-            const ani = obj.playAnimation((info && info.coverGuid) ? info.coverGuid : this._asset, (info && info.loop) ? 0 : 1, (info && info.speed != 1) ? info.speed : 1);
+
+        let useAsset = (info && info.coverGuid) ? info.coverGuid : this.asset;
+        this.onPlayBegin(obj, objID, useAsset);
+        if (this.bStance) {
+            obj.animationStance = useAsset;
+            console.log("动画设置姿态到：" + useAsset);
+        }
+        else {
+            const ani = obj.playAnimation(useAsset, (info && info.loop) ? 0 : 1, (info && info.speed != 1) ? info.speed : 1);
             this._aniPlayInfo.set(objID, ani);
             ani.onAnimFinished.add(() => {
                 if (info && info.finish) {
@@ -85,30 +100,33 @@ export abstract class AnimationPlayBase {
                 this.toStop(objID);
             });
         }
-        else {
-            if (info && info.finish) {
-                info.finish();
-            }
-        }
     }
 
     private toStop(id: number) {
-        const ani = this._aniPlayInfo.get(id);
-        if (ani) {
-            ani.stop();
-            this._aniPlayInfo.delete(id);
-        }
-        if (this._level != EAnimationLevel.Normal && this._level != EAnimationLevel.Die) {//当前不是一般动画，也不是死亡动画，在停止时都要回到一般动画
-            AnimationPlayBase.playToChar(NormalAnimation, id, null);
-        }
         const obj = AnimationPlayBase.findObject(id);
+        if (this.bStance && obj) {
+            obj.animationStance = "";
+            console.log("执行停止，动画设置姿态到：")
+        }
+        else {
+            if (this._aniPlayInfo.has(id)) {
+                const ani = this._aniPlayInfo.get(id);
+                if (ani.isPlaying) {
+                    ani.stop();
+                }
+                this._aniPlayInfo.delete(id);
+            }
+        }
+        // if (this.level != EAnimationLevel.Normal && this.level != EAnimationLevel.Die) {//当前不是一般动画，也不是死亡动画，在停止时都要回到一般动画
+        //     AnimationPlayBase.playToChar(NormalAnimation, id, { execute: true });
+        // }
         if (obj) {
             this.onPlayEnd(obj, id);
         }
     }
 
-    /**当此动画刚开始播放后要做的事 */
-    protected abstract onPlayBegin(char: Gameplay.CharacterBase, roleID: number);
+    /**当此动画刚开始播放前要做的事 */
+    protected abstract onPlayBegin(char: Gameplay.CharacterBase, roleID: number, useasset: string);
     /**当此动画结束播放后要做的事 */
     protected abstract onPlayEnd(char: Gameplay.CharacterBase, roleID: number);
 }
@@ -116,6 +134,7 @@ export abstract class AnimationPlayBase {
 export interface AnimationPlayBase {
     readonly asset: string;
     readonly level: EAnimationLevel;
+    readonly bStance: boolean;
 }
 
 /**设置动画脚本默认动画资源和等级信息
@@ -124,13 +143,16 @@ export interface AnimationPlayBase {
  * @param aniLv 播放等级
  * @returns 
  */
-export function setAnimationInfo(defaultAsset: string, aniLv: EAnimationLevel) {
+export function setAnimationInfo(defaultAsset: string, aniLv: EAnimationLevel, stance: boolean) {
     return function <T extends AnimationPlayBase>(constructor: Class<T>) {
         Object.defineProperty(constructor.prototype, 'asset', {
             value: defaultAsset
         });
         Object.defineProperty(constructor.prototype, 'level', {
             value: aniLv
+        });
+        Object.defineProperty(constructor.prototype, 'bStance', {
+            value: stance
         });
     }
 }
@@ -146,6 +168,8 @@ export enum EAnimationLevel {
     UseWeapon,
     /**飞扑 */
     Jump,
+    /**抱起/被抱起 */
+    PickUp,
     /**飞行中(被击飞，被传送) */
     Fly,
     /**趴在地面上，倒地 */
@@ -156,7 +180,8 @@ export enum EAnimationLevel {
     Die,
 }
 
-@setAnimationInfo("", EAnimationLevel.Normal)
+/**默认空闲姿态 */
+@setAnimationInfo("", EAnimationLevel.Normal, true)
 export class NormalAnimation extends AnimationPlayBase {
     protected onPlayEnd(char: Gameplay.CharacterBase, roleID: number) {
         console.log(roleID + "离开闲置动画")
