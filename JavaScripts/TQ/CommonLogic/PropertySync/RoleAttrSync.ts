@@ -99,7 +99,12 @@ export abstract class RoleAttrSync extends Core.Script {
 
     private _model: Core.GameObject = null;
     /**自身模型对象 */
-    public get model(): Core.GameObject { return this._model; }
+    public get model(): Core.GameObject {
+        if (!this.model) {
+            this._model = Core.GameObject.find(this._modelGuid);
+        }
+        return this._model;
+    }
     public setModel(m: Core.GameObject): void {
         if (Gameplay.isServer()) {
             this._model = m;
