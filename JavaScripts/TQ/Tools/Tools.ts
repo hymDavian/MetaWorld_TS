@@ -305,15 +305,15 @@ export class Tools {
     }
 
     /**根据圆心和半径，单位角度，获取圆上的坐标点集合 */
-    public static getCirclePoints(center: Type.Vector, radius: number, step: number) {
-        let result: Type.Vector[] = [];
+    public static getCirclePoints(center: { x: number, y: number, z: number }, radius: number, step: number) {
+        let result: { x: number, y: number, z: number }[] = [];
         let z = center.z;
         let [x0, y0] = [center.x, center.y];
         for (let angle: number = 0; angle < 360; angle += step) {
             let radian = angle * 2 * (Math.PI / 360);
             let x = x0 + radius * Math.cos(radian);
             let y = y0 + radius * Math.sin(radian);
-            result.push(new Type.Vector(x, y, z));
+            result.push({ x, y, z });
         }
         return result;
     }
