@@ -12,10 +12,12 @@ export namespace Datacenter {
     const EVENT_PLAYER_CLIENTSYNC_HYM = "EVENT_PLAYER_CLIENTSYNC_HYM";//客户端同步给服务器的数据
     type dataBaseInfo = { [cls: string]: any };//硬盘数据类型
     const dataClassMap: Map<string, Class<PlayerSaveData>> = new Map();//可用类类型
-
-    export let clientBeginDataFinish: boolean = false;//客户端自己的数据第一次初始完成
-
-    /**初始化数据库
+    let clientBeginDataFinish: boolean = false;
+    /**客户端自己的数据第一次初始是否完成 */
+    export function getClientCompelete(): boolean {
+        return clientBeginDataFinish;
+    }
+    /**双端调用 初始化数据库
      * 
      * @param saveOnline 是否存在线上数据
      * @param dataTypes 可用的数据类型
@@ -41,7 +43,7 @@ export namespace Datacenter {
         Events.addServerListener(EVENT_PLAYER_DATA_RSP_INIT_HYM, (pid: number, data: any, dataName: string) => {//自身拿到了谁的哪种数据，如果没有数据名，会是所有数据
             //todo 客户端数据创建或修改
             console.log("----------->dataLog:", "收到来自服务器的数据：", dataName ? `[${dataName}]` : "[全数据]", "数据值：" + JSON.stringify(data), "属于：" + pid);
-            client.getDataFromServer(pid, data, dataName);
+            getDataFromServer(pid, data, dataName);
         });
         Events.dispatchToServer(EVENT_PLAYER_DATA_REQ_INIT_HYM, localPlayer.getPlayerID());//初始时请求获取自身的数据
         while (!clientBeginDataFinish) {
@@ -61,12 +63,10 @@ export namespace Datacenter {
             server.callClientData(getid, p.getPlayerID(), dataClassMap.get(dataName));
         });
         Events.addClientListener(EVENT_PLAYER_CLIENTSYNC_HYM, (p, data: any, clsName: string) => {
-            server.getClientSyncData(p.getPlayerID(), data, clsName);
+            getClientSyncData(p.getPlayerID(), data, clsName);
             console.log("----------->dataLog:", "收到来自客户端的数据同步", JSON.stringify(data));
         })
     }
-
-
     /**被存储的数据类型 */
     export abstract class PlayerSaveData {
         /**自身属于哪个玩家 */
@@ -108,9 +108,6 @@ export namespace Datacenter {
         /**执行数据保存或同步时，实际保存到硬盘的就是此get属性的返回值 */
         public abstract get myData(): unknown;
     }
-
-
-
     /**玩家的所有数据 */
     class playerAllDataSet {
         private readonly _dataSet: Map<string, PlayerSaveData> = new Map();
@@ -149,13 +146,18 @@ export namespace Datacenter {
             if (!data) {
                 data = {};
             }
+            let clsData: T = null;
             let clsName = dataType.name;
             if (!this._dataSet.has(clsName)) {
-                let clsData = new dataType(this.pid);
-                clsData.initData(data);
+                clsData = new dataType(this.pid);
+
                 this._dataSet.set(clsName, clsData);
             }
-            return this._dataSet.get(clsName) as T;
+            else {
+                clsData = this._dataSet.get(clsName) as T;
+            }
+            clsData.initData(data);
+            return clsData;
         }
 
         /**此玩家的完整数据集 */
@@ -167,15 +169,9 @@ export namespace Datacenter {
             return ret;
         }
     }
-
     const playerDataSet: Map<number, playerAllDataSet> = new Map();//客户端上的玩家数据
     //#region -----------------------客户端-----------------------
     export namespace client {
-
-
-
-
-
         /**获取玩家的某种数据对象
          * 
          * @param getServer 是否需要从服务器获取最新数据,如果为true,最多等待1000ms后就返回结果
@@ -205,32 +201,31 @@ export namespace Datacenter {
                 }
             }
         }
-
-        /**数据装载到本地(框架回调，不需要自行调用)
-         * 
-         * @param pid 谁的数据
-         * @param data 数据体
-         * @param dataName 数据类型名，如果没有，则代表全部数据
-         */
-        export function getDataFromServer(pid: number, data: any, dataName: string) {
-            if (!clientBeginDataFinish) {
-                if (pid == Gameplay.getCurrentPlayer().getPlayerID()) {
-                    clientBeginDataFinish = true;
-                }
+    }
+    /**数据装载到本地(框架回调，不需要自行调用)
+    * 
+    * @param pid 谁的数据
+    * @param data 数据体
+    * @param dataName 数据类型名，如果没有，则代表全部数据
+    */
+    function getDataFromServer(pid: number, data: any, dataName: string) {
+        if (!clientBeginDataFinish) {
+            if (pid == Gameplay.getCurrentPlayer().getPlayerID()) {
+                clientBeginDataFinish = true;
             }
-            if (!playerDataSet.has(pid)) {
-                playerDataSet.set(pid, new playerAllDataSet(pid, {}));
+        }
+        if (!playerDataSet.has(pid)) {
+            playerDataSet.set(pid, new playerAllDataSet(pid, {}));
+        }
+        let allDataObj = playerDataSet.get(pid);
+        if (dataName) {
+            let dataType = dataClassMap.get(dataName);
+            if (dataType) {
+                allDataObj.fullData(dataType, data);
             }
-            let allDataObj = playerDataSet.get(pid);
-            if (dataName) {
-                let dataType = dataClassMap.get(dataName);
-                if (dataType) {
-                    allDataObj.fullData(dataType, data);
-                }
-            }
-            else {
-                allDataObj.fullAllData(data);
-            }
+        }
+        else {
+            allDataObj.fullAllData(data);
         }
     }
     //#endregion
@@ -250,7 +245,9 @@ export namespace Datacenter {
 
             if (playerDataSet.has(pid)) {
                 let playerMap = playerDataSet.get(pid);
-                DataStorage.asyncSetPlayerData(player, playerMap.myAllData);
+                DataStorage.asyncSetPlayerData(player, playerMap.myAllData).then(endFlag => {
+                    console.log("----------->dataLog:" + `save success:${endFlag === DataStorage.DataStorageResultCode.Sucess ? "true" : "errorID[" + endFlag + "]"}`)
+                })
             }
         }
 
@@ -394,31 +391,27 @@ export namespace Datacenter {
             Events.dispatchToClient(toPlayer, EVENT_PLAYER_DATA_RSP_INIT_HYM, dataid, toData, dataName);
         }
 
-        /**装载玩家的某种数据 (框架回调 不需要自行调用) */
-        export function getClientSyncData(pid: number, data: any, clsName: string) {
-            let syncPlayer = Gameplay.getPlayer(pid);
-            if (!syncPlayer) {//被同步数据的玩家在服务器上没了
-                console.error("----------->dataLog:", "server have not player,pid:" + pid);
-                return;
-            }
-            let allData: playerAllDataSet = null;//通知的数据体
-            if (!playerDataSet.has(pid)) {//此玩家的数据不存在！
-                console.error("----------->dataLog:", "not find playerdata in server,pid:" + pid);
-                return;
-            }
-            allData = playerDataSet.get(pid);
-            let dataType = dataClassMap.get(clsName);
-            if (dataType) {
-                allData.fullData(dataType, data);
-                savePlayerData(syncPlayer);
-            }
 
-        }
     }
+    /**装载玩家的某种数据 (框架回调 不需要自行调用) */
+    function getClientSyncData(pid: number, data: any, clsName: string) {
+        let syncPlayer = Gameplay.getPlayer(pid);
+        if (!syncPlayer) {//被同步数据的玩家在服务器上没了
+            console.error("----------->dataLog:", "server have not player,pid:" + pid);
+            return;
+        }
+        let allData: playerAllDataSet = null;//通知的数据体
+        if (!playerDataSet.has(pid)) {//此玩家的数据不存在！
+            console.error("----------->dataLog:", "not find playerdata in server,pid:" + pid);
+            return;
+        }
+        allData = playerDataSet.get(pid);
+        let dataType = dataClassMap.get(clsName);
+        if (dataType) {
+            allData.fullData(dataType, data);
+            server.savePlayerData(syncPlayer);
+        }
 
-
-
-
-
+    }
     //#endregion
 }
