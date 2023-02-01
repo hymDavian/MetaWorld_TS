@@ -1,5 +1,5 @@
 
-export type logicType = { new(G: Core.GameObject, _update: boolean): ComponentBase };
+export type logicType<T> = { new(G: Core.GameObject, _update: boolean): T };
 
 export abstract class ComponentBase {
     /**每次新建组件时自增的唯一ID值 */
@@ -102,7 +102,7 @@ export abstract class ComponentBase {
     }
 
     /**获取游戏物体的某个特定类型名称对应组件，如果没有会返回null */
-    public static GetComponent<T extends ComponentBase>(_gobj: Core.GameObject, c: logicType): T {
+    public static GetComponent<T extends ComponentBase>(_gobj: Core.GameObject, c: logicType<T>): T {
         if (!_gobj) //被添加游戏组件的物体为空
         {
             console.log("addComp Gobj is ", typeof _gobj);
@@ -119,7 +119,7 @@ export abstract class ComponentBase {
     }
 
     /**给游戏物体添加一个组件并返回，无法重复添加同类的组件 */
-    public static AddComponent<T extends ComponentBase>(_gobj: Core.GameObject, c: logicType, _update: boolean = false, ...arg: any[]): T {
+    public static AddComponent<T extends ComponentBase>(_gobj: Core.GameObject, c: logicType<T>, _update: boolean = false, ...arg: any[]): T {
 
         if (!_gobj) //被添加游戏组件的物体为空
         {
@@ -157,7 +157,7 @@ export abstract class ComponentBase {
      * @param c 组件类型
      * @param _update 是否更新
      */
-    public static NewComponentObject<T extends ComponentBase>(_guid: string, c: logicType, _update: boolean = false, ...arg: any[]): T {
+    public static NewComponentObject<T extends ComponentBase>(_guid: string, c: logicType<T>, _update: boolean = false, ...arg: any[]): T {
         let _gobj = Core.GameObject.spawnGameObject(_guid);
         if (!_gobj) {
             console.log(`create GameObject Fail! Use GUID [${_guid}] maybe not imported !`);
@@ -179,7 +179,7 @@ export abstract class ComponentBase {
     }
 
     /**移除一个游戏组件 只是执行了相关移除函数，并在这之后无法执行相关生命周期，会返回被移除的组件 */
-    public static RemoveComponent<T extends ComponentBase>(_gobj: Core.GameObject, c: logicType): T {
+    public static RemoveComponent<T extends ComponentBase>(_gobj: Core.GameObject, c: logicType<T>): T {
 
         //游戏物体不存在
         if (!_gobj) {
@@ -236,9 +236,6 @@ export abstract class ComponentBase {
                 _gobj.destroy();
             }
         }
-
-
-
     }
 
     /**组件的Update运作 */
