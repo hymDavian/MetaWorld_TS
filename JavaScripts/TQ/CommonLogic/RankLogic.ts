@@ -12,17 +12,20 @@ export class RankLogic<T> {
     /**使用的传输类名作为事件监听标志符 */
     private readonly infoTypeName: string = null;
     /**排序依据 */
-    private readonly sortBasis: [string, number, boolean][] = []
+    private readonly sortBasis: [string, number, boolean][] = [];
 
-    constructor(infoName: Class<T>, isC2S: boolean = true) {
+    private readonly abreast: boolean = false;
+
+    constructor(infoName: Class<T>, property: { c2s: boolean, abreast: boolean } = { c2s: true, abreast: false }) {
         this.infoTypeName = infoName.name;
-        this.C2S = isC2S;
+        this.C2S = property.c2s;
+        this.abreast = property.abreast;
         this.clientInit();
         this.serverInit();
     }
 
     /**获得排行榜数据后干的事情 */
-    private uiAct: (infos: T[]) => void = null;
+    private uiAct: (infos: [number, T][]) => void = null;
     /**被请求后如何创建排行榜数据的函数 */
     private dataAct: () => T[] = null;
 
@@ -32,29 +35,67 @@ export class RankLogic<T> {
 
         eventFunc(`${EVENT_RANK_REP}_${this.infoTypeName}`, (infos: T[]) => {
             if (this.uiAct) {
+                const doactInofs: [number, T][] = [];
                 if (this.sortBasis.length > 0) {
-                    type kt = keyof T;
-                    infos.sort((a, b) => {
-                        for (let i = 0; i < this.sortBasis.length; i++) {
-                            //依据[i]的字段名排序
-                            const isUp = this.sortBasis[i][2];
-                            const ka = this.sortBasis[i][0] as kt;
-                            const kb = this.sortBasis[i][0] as kt;
-                            if (a[ka] == null || a[ka] == undefined || b[kb] == null || b[kb] == undefined) { continue; }//不存在这个字段
-                            if (a[ka] == b[kb]) { continue; }//字段值相等
-                            let [na, nb] = [Number(a[ka]), Number(b[kb])];
-                            if (Number.isNaN(na) || Number.isNaN(nb)) { continue; }//无法转为数字
-
-                            //最后，比较字段的值，进行排序,根据字段是否为更高值选择往前还是往后排
-                            return isUp ? nb - na : na - nb;
+                    infos.sort(this.sortFunc);
+                    let rankIndex = 1;
+                    //当前拿到的首个跟上一个的排行值不等 或 不存在第一个值
+                    // if (doactInofs.length < 0 || !this.isEqual(doactInofs[doactInofs.length - 1][1], getFirst)) {
+                    //     rankIndex++//排行+1
+                    // }
+                    // doactInofs.push([rankIndex, getFirst]);
+                    for (let i = 0; i < infos.length; i++) {
+                        if (this.abreast) {//存在并列的情况
+                            if (doactInofs.length > 0) {//有上一个进入值了
+                                //与当前做比较，如果不同
+                                if (!this.isEqual(doactInofs[doactInofs.length - 1][1], infos[i])) {
+                                    rankIndex = doactInofs.length + 1 //排行+1
+                                }
+                            }
                         }
-
-                        return 0
-                    })
+                        else {
+                            rankIndex++;
+                        }
+                        doactInofs.push([rankIndex, infos[i]]);
+                    }
                 }
-                this.uiAct(infos);
+                this.uiAct(doactInofs);
             }
         })
+    }
+    private sortFunc(a: T, b: T): number {
+        if (this.isEqual(a, b)) {
+            return 0;
+        }
+        type kt = keyof T;
+        for (let i = 0; i < this.sortBasis.length; i++) {
+            //依据[i]的字段名排序
+            const isUp = this.sortBasis[i][2];
+            const ka = this.sortBasis[i][0] as kt;
+            const kb = this.sortBasis[i][0] as kt;
+            if (a[ka] == null || a[ka] == undefined || b[kb] == null || b[kb] == undefined) { continue; }//不存在这个字段
+            if (a[ka] == b[kb]) { continue; }//字段值相等
+            let [na, nb] = [Number(a[ka]), Number(b[kb])];
+            if (Number.isNaN(na) || Number.isNaN(nb)) { continue; }//无法转为数字
+
+            //最后，比较字段的值，进行排序,根据字段是否为更高值选择往前还是往后排
+            return isUp ? nb - na : na - nb;
+        }
+
+        return 0
+    }
+    /**判断两个对象的排序依据内容是否相等 */
+    private isEqual(a: T, b: T): boolean {
+        type kt = keyof T;
+        for (let i = 0; i < this.sortBasis.length; i++) {
+            //依据[i]的字段名排序
+            const k = this.sortBasis[i][0] as kt;
+            if (a[k] != b[k]) {//查找到任何一个不等
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**注册 收到请求后创建并发送排行数据 */
@@ -75,7 +116,7 @@ export class RankLogic<T> {
 
     /**[client] 主动请求刷新排行榜 */
     public requestRank(): void {
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             if (this.C2S) {
                 Events.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
             }
@@ -94,7 +135,7 @@ export class RankLogic<T> {
         if (data.length <= 0) {
             return;
         }
-        if (this.C2S && Gameplay.isServer()) {
+        if (this.C2S && Util.SystemUtil.isServer()) {
             let p: Gameplay.Player = (pid instanceof Gameplay.Player) ? pid : Gameplay.getPlayer(pid);
 
             Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
@@ -106,7 +147,7 @@ export class RankLogic<T> {
 
     /**[server] 仅服务器调用，给所有玩家发送排行数据*/
     public sendAllRank(data?: T[]) {
-        if (!this.C2S || Gameplay.isClient()) { return; }
+        if (!this.C2S || Util.SystemUtil.isClient()) { return; }
 
         if (!data) {
             data = this.dataAct ? this.dataAct() : [];
@@ -121,7 +162,7 @@ export class RankLogic<T> {
 
 
     /**设置客户端收到排行榜数据后的所作行为 */
-    public setClientAction(action: (infos: T[]) => void) {
+    public setClientAction(action: (infos: [number, T][]) => void) {
         this.uiAct = action;
     }
 
@@ -130,7 +171,7 @@ export class RankLogic<T> {
         this.dataAct = action;
     }
 
-    /**设置排序依据 [字段名,优先级],[字段名,优先级,此值更高是往前排] 。。。 */
+    /**设置排序依据 [字段名,优先级,此值更高是往前排] 。。。 */
     public setSortBasis(...basis: [string, number, boolean][]) {
         this.sortBasis.length = 0;
         basis.sort((a, b) => {
