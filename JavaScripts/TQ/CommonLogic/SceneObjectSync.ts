@@ -29,7 +29,7 @@ export class SceneObjectSync {
 
 	/**初始化 */
 	public init() {
-		if (Gameplay.isClient()) {
+		if (Util.SystemUtil.isClient()) {
 			this._showTask = [];
 			this._showFuncs = new Map();
 			Events.addServerListener(this.EventSyncObjects, this.onSyncObject.bind(this));
@@ -59,7 +59,7 @@ export class SceneObjectSync {
 
 	/**[C/S] 提供外部，处理物体变化任务组 */
 	public update(dt: number) {
-		if (Gameplay.isClient()) {
+		if (Util.SystemUtil.isClient()) {
 			this.clientUpdate(dt);
 		}
 		else {
@@ -118,7 +118,7 @@ export class SceneObjectSync {
 	 * @returns 
 	 */
 	public askClientSync(uuid: number, infos: { [typeKey: number]: any }, pid?: number) {
-		if (Gameplay.isClient()) { return; }
+		if (Util.SystemUtil.isClient()) { return; }
 
 		if (!this._serverObjs.has(uuid)) {
 			let serverData: syncInfo = {
@@ -183,7 +183,7 @@ export class SceneObjectSync {
 
 	/**[server] 给某个玩家同步所有物体块的所有数据 */
 	public async askToAllServerObj(pid: number) {
-		if (Gameplay.isClient()) { return; }
+		if (Util.SystemUtil.isClient()) { return; }
 		let player = Gameplay.getPlayer(pid);
 		if (!player) { return; }
 

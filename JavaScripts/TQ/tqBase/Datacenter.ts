@@ -29,7 +29,7 @@ export namespace Datacenter {
                 dataClassMap.set(cls.name, cls);
             }
         }
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             serverInit();
         }
         else {
@@ -84,14 +84,14 @@ export namespace Datacenter {
 
         /**[server] 保存到硬盘 本质上是保存此玩家的所有数据,仅服务器能执行 */
         public save() {
-            if (Gameplay.isServer()) {
+            if (Util.SystemUtil.isServer()) {
                 Datacenter.server.savePlayerData(Gameplay.getPlayer(this.pid));
             }
         }
 
         /**此数据同步给自身对方端，如果是客户端调用，会同步给服务器，如果是服务器，会同步给客户端 */
         public sync() {
-            if (Gameplay.isServer()) {
+            if (Util.SystemUtil.isServer()) {
                 let myplayer = Gameplay.getPlayer(this.pid)
                 if (myplayer) {
                     Events.dispatchToClient(myplayer, EVENT_PLAYER_DATA_RSP_INIT_HYM, this.pid, this.myData, this.className);

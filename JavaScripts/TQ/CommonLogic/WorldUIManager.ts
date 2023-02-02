@@ -6,7 +6,7 @@ export namespace worldUIMgr {
     let _hideUiDic: Map<string, baseWorldui[]> = new Map();
     /**外部调用,驱动3dui的更新 */
     export function update(dt: number) {
-        if (Gameplay.isServer()) //这是一个纯客户端展示逻辑
+        if (Util.SystemUtil.isServer()) //这是一个纯客户端展示逻辑
         {
             return;
         }

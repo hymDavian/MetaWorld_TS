@@ -195,7 +195,7 @@
 //      * @returns
 //      */
 //     public createNewItem(itemCfgid: number, amount: number, unique: boolean, column: number = 0): itemNetSync[] {
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 //             return;
 //         }
 
@@ -300,7 +300,7 @@
 
 //     /**[server] 移除道具 */
 //     public removeItem(ids: (number | string)[]): itemNetSync[] {
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 //             return;
 //         }
 //         let result: itemNetSync[] = null;
@@ -356,7 +356,7 @@
 
 //     /**[server] 修改某个独特道具的某些属性 */
 //     public changeData(guid: string, set: { k: string, v: number }[]): itemNetSync {
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 //             return;
 //         }
 
@@ -443,7 +443,7 @@
 //      * @param pid 给哪个玩家,客户端调随意固定为自身，服务器调用时必传，无效玩家ID将不会产生物品
 //      */
 //     export function createNewItem(itemCfgid: number, amount: number, unique: boolean, column: number = 0, pid: number = -1) {
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 //             //通知服务器新增道具
 //             ModuleManager.instance.getModule(BackpackModuleC).reqCreateItem(itemCfgid, amount, unique, column);
 //         }
@@ -455,7 +455,7 @@
 
 //     /**移除某些物品,pid:客户端随意，服务器指定的某玩家 */
 //     export function removeItem(pid: number, ...id: (number | string)[]) {
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 //             //通知服务器移除道具
 //             ModuleManager.instance.getModule(BackpackModuleC).reqRemoveItem(id);
 //         }
@@ -467,7 +467,7 @@
 
 //     /**修改独特道具的某些属性，pid:客户端随意，服务器指定的某玩家 */
 //     export function updateItem(pid: number, id: string, ...set: { k: string, v: number }[]) {
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 //             ModuleManager.instance.getModule(BackpackModuleC).reqUpdateItem(id, set);
 //         }
 //         else {
@@ -478,7 +478,7 @@
 //     /**获取某个道具,根据传入的是配置ID(number)还是唯一ID(string) 返回堆叠道具或独特道具,返回所在背包栏 */
 //     export function findItem(id: number | string, pid?: number): { ret: stackItem | uniqueItem, cid: number } {
 //         let dp: BackpackDataHelper = null;
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 
 //             dp = ModuleManager.instance.getModule(BackpackModuleC).myData;
 //         }
@@ -493,7 +493,7 @@
 //     /**获取某一背包栏的所有数据 */
 //     export function getColumnMap(cid: number, pid?: number): columnMap {
 //         let dp: BackpackDataHelper = null;
-//         if (GamePlay.isClient()) {
+//         if (Util.SystemUtil.isClient()) {
 
 //             dp = ModuleManager.instance.getModule(BackpackModuleC).myData;
 //         }

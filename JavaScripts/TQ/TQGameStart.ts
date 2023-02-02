@@ -46,7 +46,7 @@ export abstract class TQGameStart extends Core.Script {
 
     /**UI初始化 */
     private UIinit() {
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             Extension.UIManager.getInstance(Extension.UIManager);
             if (this.firstUI) {//有自定义初始UI
                 Extension.UIManager.instance.show(this.firstUI);

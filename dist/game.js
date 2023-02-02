@@ -240,7 +240,7 @@ var Datacenter;
         dataClassMap.set(cls.name, cls);
       }
     }
-    if (Gameplay.isServer()) {
+    if (Util.SystemUtil.isServer()) {
       serverInit();
     } else {
       Datacenter2.clientBeginDataFinish = false;
@@ -284,12 +284,12 @@ var Datacenter;
       return this.constructor.name;
     }
     save() {
-      if (Gameplay.isServer()) {
+      if (Util.SystemUtil.isServer()) {
         Datacenter2.server.savePlayerData(Gameplay.getPlayer(this.pid));
       }
     }
     sync() {
-      if (Gameplay.isServer()) {
+      if (Util.SystemUtil.isServer()) {
         let myplayer = Gameplay.getPlayer(this.pid);
         if (myplayer) {
           Events.dispatchToClient(myplayer, EVENT_PLAYER_DATA_RSP_INIT_HYM, this.pid, this.myData, this.className);
@@ -579,13 +579,13 @@ var NetManager;
   }
   const errorMap = /* @__PURE__ */ new Map();
   function setErrorTips(errorid, tips) {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       errorMap.set(errorid, { errorid, act: tips });
     }
   }
   NetManager2.setErrorTips = setErrorTips;
   function sendNet(cmd, data, pid, errorid = 0) {
-    if (Gameplay.isServer()) {
+    if (Util.SystemUtil.isServer()) {
       let net = {
         errorid,
         data,
@@ -602,7 +602,7 @@ var NetManager;
         Events.dispatchToAllClient(EVENT_NETMGR_SEND_CLIENT, net);
       }
     }
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       let locPlayer = Gameplay.getCurrentPlayer();
       if (!locPlayer) {
         console.error("current player notFind !");
@@ -618,8 +618,8 @@ var NetManager;
   }
   NetManager2.sendNet = sendNet;
   function initNetMgr() {
-    const curIsServer = Gameplay.isServer();
-    if (Gameplay.isServer()) {
+    const curIsServer = Util.SystemUtil.isServer();
+    if (Util.SystemUtil.isServer()) {
       Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p, net) => {
         const netFunc = netRegistFunc.get(net.cmdid);
         if (netFunc) {
@@ -643,7 +643,7 @@ var NetManager;
         }
       });
     }
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       Events.addServerListener(EVENT_NETMGR_SEND_CLIENT, (net) => {
         if (errorMap.has(net.errorid)) {
           let tip = errorMap.get(net.errorid);
@@ -680,7 +680,7 @@ var NetManager;
     modArray.forEach((m) => {
       m["start"]();
     });
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);
     }
   }
@@ -704,7 +704,7 @@ var NetManager;
   }
   NetManager2.netFlagClass = netFlagClass;
   function netFlagFunc(cmdid) {
-    return function(target, propertyRey, description) {
+    return function (target, propertyRey, description) {
       if (!description.value || typeof description.value != "function") {
         return;
       }
@@ -733,7 +733,7 @@ var NetManager;
 var NetModuleBase = class {
   isServer = true;
   constructor() {
-    this.isServer = Gameplay.isServer();
+    this.isServer = Util.SystemUtil.isServer();
     this.onAwake();
   }
   getModuleIndex() {
@@ -975,7 +975,7 @@ var HYMGame = class extends Core.Script {
   onDestroy() {
   }
   UIinit() {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       Extension.UIManager.getInstance(Extension.UIManager);
       Extension.UIManager.instance.show(NewUI);
     }
@@ -1092,7 +1092,7 @@ var RankLogic = class {
     }
   }
   requestRank() {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       if (this.C2S) {
         Events.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
       } else {
@@ -1107,7 +1107,7 @@ var RankLogic = class {
     if (data.length <= 0) {
       return;
     }
-    if (this.C2S && Gameplay.isServer()) {
+    if (this.C2S && Util.SystemUtil.isServer()) {
       let p = pid instanceof Gameplay.Player ? pid : Gameplay.getPlayer(pid);
       Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
     } else {
@@ -1115,7 +1115,7 @@ var RankLogic = class {
     }
   }
   sendAllRank(data) {
-    if (!this.C2S || Gameplay.isClient()) {
+    if (!this.C2S || Util.SystemUtil.isClient()) {
       return;
     }
     if (!data) {
@@ -1152,7 +1152,7 @@ var rewardLogic;
   let actions_C = /* @__PURE__ */ new Map();
   let actions_S = /* @__PURE__ */ new Map();
   function setReceiveFunc(cmd, act) {
-    let map = Gameplay.isClient() ? actions_C : actions_S;
+    let map = Util.SystemUtil.isClient() ? actions_C : actions_S;
     if (!map.has(cmd)) {
       map.set(cmd, []);
     }
@@ -1160,14 +1160,14 @@ var rewardLogic;
   }
   rewardLogic2.setReceiveFunc = setReceiveFunc;
   function initRewardAct(log = false) {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       Events.addServerListener(EVENT_RECEIVE_REWARD, doRewardAction);
     }
     getLog = log;
   }
   rewardLogic2.initRewardAct = initRewardAct;
   function sendReward(pid, cmd, ...items) {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       return;
     }
     doRewardAction(pid, cmd, items);
@@ -1180,7 +1180,7 @@ var rewardLogic;
 ${pid} \u6536\u5230\u5956\u52B1\u7C7B\u578B ${ty} :
  ${JSON.stringify(rws)}`);
     }
-    let map = Gameplay.isClient() ? actions_C : actions_S;
+    let map = Util.SystemUtil.isClient() ? actions_C : actions_S;
     if (map.has(ty)) {
       map.get(ty).forEach((act) => {
         act(pid, rws);
@@ -1210,7 +1210,7 @@ var EventTools;
   const clientEvemtMap = /* @__PURE__ */ new Map();
   const noThisObj = /* @__PURE__ */ new Map();
   function setEvent(eventName, space = 0 /* local */, thisObj) {
-    return function(target, propertyRey, description) {
+    return function (target, propertyRey, description) {
       if (description.value && typeof description.value === "function") {
         let m = null;
         switch (space) {
@@ -1239,14 +1239,14 @@ var EventTools;
   EventTools2.setNoTargetEvent = setNoTargetEvent;
   function callEvent(eventName, ...args) {
     callEvents(locEvemtMap.get(eventName), eventName, ...args);
-    let csMap = Gameplay.isServer() ? serverEvemtMap.get(eventName) : clientEvemtMap.get(eventName);
+    let csMap = Util.SystemUtil.isServer() ? serverEvemtMap.get(eventName) : clientEvemtMap.get(eventName);
     callEvents(csMap, eventName, ...args);
-    if (Gameplay.isServer()) {
+    if (Util.SystemUtil.isServer()) {
       if (clientEvemtMap.has(eventName)) {
         Events.dispatchToAllClient(EVENT_CALLCLIENT, eventName, ...args);
       }
     }
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       if (serverEvemtMap.has(eventName)) {
         Events.dispatchToServer(EVENT_CALLSERVER, eventName, ...args);
       }
@@ -1276,10 +1276,10 @@ var EventTools;
   const EVENT_CALLSERVER = "SUPER_EVENTTOOL_CALLSERVER";
   const EVENT_CALLCLIENT = "SUPER_EVENTTOOL_CALLCLIENT";
   function initEventRPC() {
-    if (Gameplay.isServer()) {
+    if (Util.SystemUtil.isServer()) {
       Events.addClientListener(EVENT_CALLSERVER, clientToServerCallEvent);
     }
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       Events.addServerListener(EVENT_CALLCLIENT, serverToClientCallEvent);
     }
   }
@@ -1452,7 +1452,7 @@ var _SceneObjectSync = class {
   _attrEqualFuncs = null;
   _sendLength = 35;
   init() {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       this._showTask = [];
       this._showFuncs = /* @__PURE__ */ new Map();
       Events.addServerListener(this.EventSyncObjects, this.onSyncObject.bind(this));
@@ -1472,7 +1472,7 @@ var _SceneObjectSync = class {
     this._showTask.push(...infos);
   }
   update(dt) {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       this.clientUpdate(dt);
     } else {
       this.serverUpdate(dt);
@@ -1513,7 +1513,7 @@ var _SceneObjectSync = class {
     }
   }
   askClientSync(uuid, infos, pid) {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       return;
     }
     if (!this._serverObjs.has(uuid)) {
@@ -1569,7 +1569,7 @@ var _SceneObjectSync = class {
     this._attrEqualFuncs.set(type, func);
   }
   async askToAllServerObj(pid) {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       return;
     }
     let player = Gameplay.getPlayer(pid);
@@ -1929,7 +1929,7 @@ var _TQGameStart = class extends Core.Script {
   onDestroy() {
   }
   UIinit() {
-    if (Gameplay.isClient()) {
+    if (Util.SystemUtil.isClient()) {
       Extension.UIManager.getInstance(Extension.UIManager);
       if (this.firstUI) {
         Extension.UIManager.instance.show(this.firstUI);
@@ -1977,7 +1977,7 @@ var BulletChatUI;
       axisMax = Math.max(min, max);
     }
     rootCanvas = canvas;
-    if (Gameplay.isClient() && !bindNet) {
+    if (Util.SystemUtil.isClient() && !bindNet) {
       bindNet = true;
       Events.addServerListener(Event_serverCallClientBullet, (msg, time, color) => {
         createBulletChat(msg, time, color);
@@ -1986,7 +1986,7 @@ var BulletChatUI;
   }
   BulletChatUI2.init = init;
   function createBulletChat(msg, time = 1e4, color = Type.LinearColor.white) {
-    if (Gameplay.isServer()) {
+    if (Util.SystemUtil.isServer()) {
       Events.dispatchToAllClient(Event_serverCallClientBullet, msg, time, color);
       return;
     }
@@ -2047,18 +2047,18 @@ var BulletChatUI;
   ((TweenClass2) => {
     const Easing = {
       Linear: {
-        None: function(amount) {
+        None: function (amount) {
           return amount;
         }
       },
       Quadratic: {
-        In: function(amount) {
+        In: function (amount) {
           return amount * amount;
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return amount * (2 - amount);
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if ((amount *= 2) < 1) {
             return 0.5 * amount * amount;
           }
@@ -2066,13 +2066,13 @@ var BulletChatUI;
         }
       },
       Cubic: {
-        In: function(amount) {
+        In: function (amount) {
           return amount * amount * amount;
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return --amount * amount * amount + 1;
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if ((amount *= 2) < 1) {
             return 0.5 * amount * amount * amount;
           }
@@ -2080,13 +2080,13 @@ var BulletChatUI;
         }
       },
       Quartic: {
-        In: function(amount) {
+        In: function (amount) {
           return amount * amount * amount * amount;
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return 1 - --amount * amount * amount * amount;
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if ((amount *= 2) < 1) {
             return 0.5 * amount * amount * amount * amount;
           }
@@ -2094,13 +2094,13 @@ var BulletChatUI;
         }
       },
       Quintic: {
-        In: function(amount) {
+        In: function (amount) {
           return amount * amount * amount * amount * amount;
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return --amount * amount * amount * amount * amount + 1;
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if ((amount *= 2) < 1) {
             return 0.5 * amount * amount * amount * amount * amount;
           }
@@ -2108,24 +2108,24 @@ var BulletChatUI;
         }
       },
       Sinusoidal: {
-        In: function(amount) {
+        In: function (amount) {
           return 1 - Math.sin((1 - amount) * Math.PI / 2);
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return Math.sin(amount * Math.PI / 2);
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           return 0.5 * (1 - Math.sin(Math.PI * (0.5 - amount)));
         }
       },
       Exponential: {
-        In: function(amount) {
+        In: function (amount) {
           return amount === 0 ? 0 : Math.pow(1024, amount - 1);
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return amount === 1 ? 1 : 1 - Math.pow(2, -10 * amount);
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if (amount === 0) {
             return 0;
           }
@@ -2139,13 +2139,13 @@ var BulletChatUI;
         }
       },
       Circular: {
-        In: function(amount) {
+        In: function (amount) {
           return 1 - Math.sqrt(1 - amount * amount);
         },
-        Out: function(amount) {
+        Out: function (amount) {
           return Math.sqrt(1 - --amount * amount);
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if ((amount *= 2) < 1) {
             return -0.5 * (Math.sqrt(1 - amount * amount) - 1);
           }
@@ -2153,7 +2153,7 @@ var BulletChatUI;
         }
       },
       Elastic: {
-        In: function(amount) {
+        In: function (amount) {
           if (amount === 0) {
             return 0;
           }
@@ -2162,7 +2162,7 @@ var BulletChatUI;
           }
           return -Math.pow(2, 10 * (amount - 1)) * Math.sin((amount - 1.1) * 5 * Math.PI);
         },
-        Out: function(amount) {
+        Out: function (amount) {
           if (amount === 0) {
             return 0;
           }
@@ -2171,7 +2171,7 @@ var BulletChatUI;
           }
           return Math.pow(2, -10 * amount) * Math.sin((amount - 0.1) * 5 * Math.PI) + 1;
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if (amount === 0) {
             return 0;
           }
@@ -2186,15 +2186,15 @@ var BulletChatUI;
         }
       },
       Back: {
-        In: function(amount) {
+        In: function (amount) {
           const s = 1.70158;
           return amount === 1 ? 1 : amount * amount * ((s + 1) * amount - s);
         },
-        Out: function(amount) {
+        Out: function (amount) {
           const s = 1.70158;
           return amount === 0 ? 0 : --amount * amount * ((s + 1) * amount + s) + 1;
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           const s = 1.70158 * 1.525;
           if ((amount *= 2) < 1) {
             return 0.5 * (amount * amount * ((s + 1) * amount - s));
@@ -2203,10 +2203,10 @@ var BulletChatUI;
         }
       },
       Bounce: {
-        In: function(amount) {
+        In: function (amount) {
           return 1 - Easing.Bounce.Out(1 - amount);
         },
-        Out: function(amount) {
+        Out: function (amount) {
           if (amount < 1 / 2.75) {
             return 7.5625 * amount * amount;
           } else if (amount < 2 / 2.75) {
@@ -2217,24 +2217,24 @@ var BulletChatUI;
             return 7.5625 * (amount -= 2.625 / 2.75) * amount + 0.984375;
           }
         },
-        InOut: function(amount) {
+        InOut: function (amount) {
           if (amount < 0.5) {
             return Easing.Bounce.In(amount * 2) * 0.5;
           }
           return Easing.Bounce.Out(amount * 2 - 1) * 0.5 + 0.5;
         }
       },
-      generatePow: function(power = 4) {
+      generatePow: function (power = 4) {
         power = power < Number.EPSILON ? Number.EPSILON : power;
         power = power > 1e4 ? 1e4 : power;
         return {
-          In: function(amount) {
+          In: function (amount) {
             return amount ** power;
           },
-          Out: function(amount) {
+          Out: function (amount) {
             return 1 - (1 - amount) ** power;
           },
-          InOut: function(amount) {
+          InOut: function (amount) {
             if (amount < 0.5) {
               return (amount * 2) ** power / 2;
             }
@@ -2244,7 +2244,7 @@ var BulletChatUI;
       }
     };
     const Interpolation = {
-      Linear: function(v, k) {
+      Linear: function (v, k) {
         const m = v.length - 1;
         const f = m * k;
         const i = Math.floor(f);
@@ -2257,7 +2257,7 @@ var BulletChatUI;
         }
         return fn(v[i], v[i + 1 > m ? m : i + 1], f - i);
       },
-      Bezier: function(v, k) {
+      Bezier: function (v, k) {
         let b = 0;
         const n = v.length - 1;
         const pw = Math.pow;
@@ -2267,7 +2267,7 @@ var BulletChatUI;
         }
         return b;
       },
-      CatmullRom: function(v, k) {
+      CatmullRom: function (v, k) {
         const m = v.length - 1;
         let f = m * k;
         let i = Math.floor(f);
@@ -2288,16 +2288,16 @@ var BulletChatUI;
         }
       },
       Utils: {
-        Linear: function(p0, p1, t) {
+        Linear: function (p0, p1, t) {
           return (p1 - p0) * t + p0;
         },
-        Bernstein: function(n, i) {
+        Bernstein: function (n, i) {
           const fc = Interpolation.Utils.Factorial;
           return fc(n) / fc(i) / fc(n - i);
         },
-        Factorial: function() {
+        Factorial: function () {
           const a = [1];
-          return function(n) {
+          return function (n) {
             let s = 1;
             if (a[n]) {
               return a[n];
@@ -2309,7 +2309,7 @@ var BulletChatUI;
             return s;
           };
         }(),
-        CatmullRom: function(p0, p1, p2, p3, t) {
+        CatmullRom: function (p0, p1, p2, p3, t) {
           const v0 = (p2 - p0) * 0.5;
           const v1 = (p3 - p1) * 0.5;
           const t2 = t * t;
@@ -2363,7 +2363,7 @@ var BulletChatUI;
       }
     }
     const mainGroup = new Group();
-    const now = function() {
+    const now = function () {
       return Date.now();
     };
     class Tween {
@@ -2746,7 +2746,7 @@ var _LoadingUI = class {
     if (this.loadingUI == null) {
       this.loadingUI = Extension.UIManager.instance.create(this.uiClass);
       let UIupdate = this.loadingUI["onUpdate"];
-      this.loadingUI["onUpdate"] = function(dt) {
+      this.loadingUI["onUpdate"] = function (dt) {
         UIupdate(dt);
         _LoadingUI._ins.update(dt);
       };

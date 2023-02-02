@@ -31,7 +31,7 @@ export default class HYMGame extends Core.Script {
 
 	/**UIC初始化 */
 	protected UIinit() {
-		if (Gameplay.isClient()) {
+		if (Util.SystemUtil.isClient()) {
 			Extension.UIManager.getInstance(Extension.UIManager);
 			Extension.UIManager.instance.show(NewUI);
 		}

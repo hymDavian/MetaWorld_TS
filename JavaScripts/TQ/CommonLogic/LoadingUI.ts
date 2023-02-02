@@ -1,5 +1,5 @@
 /**基于不与其他任何脚本耦合，实现自我逻辑自洽的虚Loading基类 */
-abstract class LodPanelClass extends UI.UIBehaviour {
+abstract class LodPanelClass extends UI.UIBehavior {
     img_bg: UI.Image;
     txt_des: UI.TextBlock;
     slider_progress: UI.ProgressBar;
@@ -19,6 +19,7 @@ export class LoadingUI {
 
     private static _ins: LoadingUI = null;
     public static get instance(): LoadingUI {
+
         if (LoadingUI._ins == null) {
             LoadingUI._ins = new LoadingUI();
         }
@@ -37,7 +38,7 @@ export class LoadingUI {
             console.error("没有提供loadingUI类型！");
         }
         if (this.loadingUI == null) {
-            this.loadingUI = Extension.UIManager.instance.create(this.uiClass);// this.uiClass.creat();
+            this.loadingUI = UI.UIManager.instance.create(this.uiClass);// this.uiClass.creat();
             this.loadingUI.canUpdate = true;
             let UIupdate: (dt: number) => void = this.loadingUI["onUpdate"];
             this.loadingUI["onUpdate"] = function (dt: number) {
@@ -52,7 +53,7 @@ export class LoadingUI {
             // GameGlobal.customUpdateAct.add(this.update, this);
         }
         else if (!this.loadingUI.visible) {
-            Extension.UIManager.instance.showUI(this.loadingUI, Extension.UILayerTop);
+            UI.UIManager.instance.showUI(this.loadingUI, UI.UILayerTop);
         }
         return this;
     }
@@ -141,7 +142,7 @@ export class LoadingUI {
                     }
                     this.lastSetCompAction = null;
                 }
-                Extension.UIManager.instance.hideUI(this.loadingUI);
+                UI.UIManager.instance.hideUI(this.loadingUI);
                 this.clearAll();
             }
 

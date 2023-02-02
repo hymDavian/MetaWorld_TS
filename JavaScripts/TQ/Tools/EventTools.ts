@@ -61,16 +61,16 @@ export namespace EventTools {
 	export function callEvent(eventName: string, ...args: any[]) {
 		callEvents(locEvemtMap.get(eventName), eventName, ...args);
 
-		let csMap = Gameplay.isServer() ? serverEvemtMap.get(eventName) : clientEvemtMap.get(eventName)
+		let csMap = Util.SystemUtil.isServer() ? serverEvemtMap.get(eventName) : clientEvemtMap.get(eventName)
 		callEvents(csMap, eventName, ...args)
 
 
-		if (Gameplay.isServer()) {//本地算服务器
+		if (Util.SystemUtil.isServer()) {//本地算服务器
 			if (clientEvemtMap.has(eventName)) {//客户端有需要执行的
 				Events.dispatchToAllClient(EVENT_CALLCLIENT, eventName, ...args);
 			}
 		}
-		if (Gameplay.isClient()) {
+		if (Util.SystemUtil.isClient()) {
 			if (serverEvemtMap.has(eventName)) {
 				Events.dispatchToServer(EVENT_CALLSERVER, eventName, ...args);
 			}
@@ -108,10 +108,10 @@ export namespace EventTools {
 	const EVENT_CALLSERVER: string = "SUPER_EVENTTOOL_CALLSERVER";
 	const EVENT_CALLCLIENT: string = "SUPER_EVENTTOOL_CALLCLIENT";
 	export function initEventRPC() {
-		if (Gameplay.isServer()) {//服务器监听客户端事件
+		if (Util.SystemUtil.isServer()) {//服务器监听客户端事件
 			Events.addClientListener(EVENT_CALLSERVER, clientToServerCallEvent)
 		}
-		if (Gameplay.isClient()) {
+		if (Util.SystemUtil.isClient()) {
 			Events.addServerListener(EVENT_CALLCLIENT, serverToClientCallEvent)
 		}
 

@@ -9,7 +9,7 @@ export namespace rewardLogic {
 
     /**[C/S] 注册领取奖励时执行的事情 */
     export function setReceiveFunc(cmd: number, act: rewardAct) {
-        let map = Gameplay.isClient() ? actions_C : actions_S;
+        let map = Util.SystemUtil.isClient() ? actions_C : actions_S;
 
         if (!map.has(cmd)) {
             map.set(cmd, []);
@@ -19,7 +19,7 @@ export namespace rewardLogic {
 
     /**[C/S] 初始化*/
     export function initRewardAct(log: boolean = false) {
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             Events.addServerListener(EVENT_RECEIVE_REWARD, doRewardAction)
         }
         getLog = log;
@@ -32,7 +32,7 @@ export namespace rewardLogic {
      * @param items 具体奖励内容组
      */
     export function sendReward(pid: number, cmd: number, ...items: unknown[]) {
-        if (Gameplay.isClient()) { return; }
+        if (Util.SystemUtil.isClient()) { return; }
         //通知自身
         doRewardAction(pid, cmd, items);//服务器本身的奖励领取
         //然后通知客户端
@@ -44,7 +44,7 @@ export namespace rewardLogic {
         if (getLog) {
             console.log(`\n${pid} 收到奖励类型 ${ty} :\n ${JSON.stringify(rws)}`);
         }
-        let map = Gameplay.isClient() ? actions_C : actions_S;
+        let map = Util.SystemUtil.isClient() ? actions_C : actions_S;
         if (map.has(ty)) {
             map.get(ty).forEach(act => {
                 act(pid, rws);

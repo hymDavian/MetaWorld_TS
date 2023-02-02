@@ -23,7 +23,7 @@ export abstract class RoleAttrSync extends Core.Script {
      * @returns 
      */
     public static createRole<T extends RoleAttrSync>(scriptClass: new (...args: unknown[]) => T, id: number, args?: createArgs<T>) {
-        if (Gameplay.isClient()) { return; }//客户端无法创建
+        if (Util.SystemUtil.isClient()) { return; }//客户端无法创建
         if (RoleAttrSync.allRoles.has(id)) {
             if (args) {
                 const role = RoleAttrSync.allRoles.get(id);
@@ -48,7 +48,7 @@ export abstract class RoleAttrSync extends Core.Script {
 
     /**[client] 当前玩家的属性脚本对象 */
     public static get currentRole(): RoleAttrSync {
-        if (Gameplay.isServer()) { return null; }
+        if (Util.SystemUtil.isServer()) { return null; }
         return RoleAttrSync.allRoles.get(Gameplay.getCurrentPlayer().getPlayerID());
     }
 
@@ -58,7 +58,7 @@ export abstract class RoleAttrSync extends Core.Script {
     public get nickName(): string { return this._nickName; }
     /**[server] 设置名称 */
     public setNickName(name: string) {
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             this._nickName = name;
         }
     }
@@ -76,7 +76,7 @@ export abstract class RoleAttrSync extends Core.Script {
     public get roleID(): number { return this._roleID; }
     /** 角色数字ID只能设置一次，用于Map内定位此对象 */
     private setRoleID(id: number): void {
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             if (!this._roleID) {
                 this._roleID = id;
                 this.onIDChange();
@@ -106,7 +106,7 @@ export abstract class RoleAttrSync extends Core.Script {
         return this._model;
     }
     public setModel(m: Core.GameObject): void {
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             this._model = m;
             this._modelGuid = m.guid;
         }
@@ -131,7 +131,7 @@ export abstract class RoleAttrSync extends Core.Script {
     public getAttr(ty: ERoleProperty): number {
         let ret = 0;
         if (ERolePropertyServer.has(ty)) {
-            if (Gameplay.isClient()) {
+            if (Util.SystemUtil.isClient()) {
                 console.error(`${ty}是一个服务器属性，但此时客户端在获取，请检查逻辑！`)
             }
             ret = this._serverData.get(ty);
@@ -144,14 +144,14 @@ export abstract class RoleAttrSync extends Core.Script {
 
     /**服务器 设置属性类型对应的值 */
     public setAttr(ty: ERoleProperty, val: number) {
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             this.serverSetAttr(ty, val);
         }
     }
 
     /**服务器 批量设置属性值 */
     public setAttrAll(...vals: [ERoleProperty, number][]) {
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             if (!vals || vals.length <= 0) {
                 return;
             }

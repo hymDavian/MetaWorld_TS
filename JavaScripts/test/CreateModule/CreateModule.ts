@@ -15,7 +15,7 @@ export class CreateModule extends NetModuleBase {
     private locPlayer: Gameplay.Character = null;
 
     protected onStart() {
-        if (Gameplay.isServer()) {//如果是服务器
+        if (Util.SystemUtil.isServer()) {//如果是服务器
             console.log("服务器初始化")
         }
         else {
@@ -47,7 +47,7 @@ export class CreateModule extends NetModuleBase {
 
 
     protected onUpdate(dt: number) {
-        if (!Gameplay.isServer()) {
+        if (!Util.SystemUtil.isServer()) {
             let info = this.tempInfo[this.curSwitchID];
             if (info && info.tempObj) {
                 info.tempObj.worldLocation = this.locPlayer.worldLocation.add(this.locPlayer.forwardVector.multiply(100));

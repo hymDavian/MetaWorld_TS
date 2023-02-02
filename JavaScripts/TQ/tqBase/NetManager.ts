@@ -32,7 +32,7 @@ export namespace NetManager {
 
     /**[client] 注册收到错误信息后的提示 */
     export function setErrorTips(errorid: number, tips: string | ((id: number) => void)) {
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             errorMap.set(errorid, { errorid: errorid, act: tips });
         }
     }
@@ -47,7 +47,7 @@ export namespace NetManager {
      * @param errorid [server]错误提示
      */
     export function sendNet(cmd: number, data: any[], pid?: number, errorid: number = 0) {
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             let net: sendClientPackage = {
                 errorid: errorid,
                 data: data,
@@ -66,7 +66,7 @@ export namespace NetManager {
                 Events.dispatchToAllClient(EVENT_NETMGR_SEND_CLIENT, net);
             }
         }
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             let locPlayer = Gameplay.getCurrentPlayer();
             if (!locPlayer) {
                 console.error("current player notFind !")
@@ -85,7 +85,7 @@ export namespace NetManager {
     /**网络传输初始化 */
     export function initNetMgr() {
 
-        if (Gameplay.isServer()) {
+        if (Util.SystemUtil.isServer()) {
             //收到来自客户端的数据时
             Events.addClientListener(EVENT_NETMGR_SEND_SERVER, (p: Gameplay.Player, net: sendServerPackage) => {
                 const netFunc = netRegistFunc.get(net.cmdid);
@@ -111,7 +111,7 @@ export namespace NetManager {
             })
         }
 
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             //收到来自服务器的数据
             Events.addServerListener(EVENT_NETMGR_SEND_CLIENT, (net: sendClientPackage) => {
                 if (errorMap.has(net.errorid)) {//错误提示
@@ -153,7 +153,7 @@ export namespace NetManager {
         })
 
 
-        if (Gameplay.isClient()) {
+        if (Util.SystemUtil.isClient()) {
             Events.dispatchToServer(EVENT_NETMGR_PLAYERENTER);//此客户端初始化完成了，所有模块start已经走完，通知服务器，玩家进入
         }
     }
@@ -163,7 +163,7 @@ export namespace NetManager {
     export function update() {
         const now = Date.now();
         if (time == 0) { time = now };
-        const curIsServer: boolean = Gameplay.isServer();
+        const curIsServer: boolean = Util.SystemUtil.isServer();
         for (let [k, v] of netInstanceObj) {
             if (!v.useUpdate) { continue; }
             if (v.netLocation == ModuleNetLocation.P2P) {//双端模块无视环境一定执行
