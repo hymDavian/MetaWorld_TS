@@ -1,13 +1,28 @@
 import './cannon';
 /**仅用于客户端的物理模拟 */
 export namespace CANNONHelp {
+    /**目前支持的形状枚举 */
     export enum EGeometry {
         /**矩形 */
         Box,
         /**球形 */
-        Sphere
+        Sphere,
+        /**圆柱 */
+        Cylinder,
+        /**圆锥 */
+        Cone,
+        /**四棱锥 */
+        Pyramids
     }
-    type matConfig = { friction: number, restitution: number };
+    /**根据MW游戏对象构建对应物理模型所需要的信息 */
+    export interface IBuildPhysicsInfo {
+        /**MW编辑器的游戏物体 */
+        mw: Core.GameObject,
+        /**对应需要契合的物理集合形状 */
+        shape: EGeometry,
+        /**大小缩放值 */
+        // size: Type.Vector
+    }
 
     let _CWorld: CANNON.World = null;
     const _idPair: Map<number, GameObject> = new Map();
@@ -25,13 +40,13 @@ export namespace CANNONHelp {
         /**是否使用粗略计算的四元数，如果为false,会更精确，但是速度较慢 */
         quatNormalizeFast: true,
         /**四元数归一化频率，值越大计算效果越好 */
-        quatNormalizeSkip: 0,
+        quatNormalizeSkip: 1,
         /**默认质量大小，影响碰撞惯性和运动计算，一般设置在0.1-10符合正常效果 */
-        defaultMass: 5,
+        defaultMass: 50,
         /**默认材质属性 摩擦，恢复系数。
          * 这两个值如果不是负数，将替代默认碰撞属性
          */
-        defaultMat: { friction: 0.5, restitution: 0.1 },
+        defaultMat: { friction: 0.9, restitution: 0.1 },
         /**物理刷新频率 */
         stepFrequency: 60,
         /**每帧物理计算调用最大数量，用于大量物理计算分段处理 */
@@ -40,7 +55,7 @@ export namespace CANNONHelp {
         /**对于短时间内没收到其他物体影响的物理对象，是否会剔除这部分物体的物理计算 */
         allowSleep: true,
         /**物体速度向量的摸小于该值时会被视为休眠状态 */
-        sleepSpeedLimit: 100,
+        sleepSpeedLimit: 10,
         /**如果物体在这个时间内一直处于休眠标记中，将会正式进入休眠状态 */
         sleepTimeLimit: 3,
     }
@@ -49,13 +64,22 @@ export namespace CANNONHelp {
     /**带有单端物理特性的游戏物体 */
     export class GameObject {
         public readonly mwObject: Core.GameObject;
-        public readonly cannonObject: CANNON.Body;
-        private readonly _allMwObject: Core.GameObject[] = [];
-        public constructor(mw: Core.GameObject[], cannon: CANNON.Body) {
-            this.mwObject = mw[0];
-            this._allMwObject = mw;
-            this.cannonObject = cannon;
+        private _body: CANNON.Body = null;
+        public get cannonObject(): CANNON.Body { return this._body; }
+        private readonly _allMwObject: Core.GameObject[] = [];//物体组
+        private readonly _allGeometry: EGeometry[] = [];//形状组
+        private readonly _offset: CANNON.Vec3[] = [];//偏移量信息
+        private readonly _opition: CANNON.IBodyOptions = null;//碰撞设定
+        constructor(mw: [Core.GameObject, EGeometry, CANNON.Vec3][], cannon: CANNON.Body, opition: CANNON.IBodyOptions) {
+            this.mwObject = mw[0][0];
+            mw.forEach(val => {
+                this._allMwObject.push(val[0]);
+                this._allGeometry.push(val[1]);
+                this._offset.push(val[2])
+            })
+            this._body = cannon;
             this.position = this.mwObject.worldLocation;
+            this._opition = opition;
 
             _idPair.set(cannon.id, this);
             _guidPair.set(this.mwObject.guid, this);
@@ -67,8 +91,75 @@ export namespace CANNONHelp {
         public set position(pos: Type.Vector) {
             const [mwx, mwy, mwz] = [pos.x, pos.y, pos.z];
             this.cannonObject.position.set(mwx, mwy, mwz);
-            this.sync();
+            this.cannonObject.wakeUp();
         }
+
+        /**获取旋转角值,基于这个获取值去设置内部成员属性不会起作用 */
+        public get rotation(): Type.Rotation {
+            return this.mwObject.worldRotation;
+        }
+        /**设置旋转 */
+        public set rotation(rot: Type.Rotation) {
+            this.cannonObject.quaternion.setFromEuler(rot.x, rot.y, rot.z);//   .set(x, y, z, w);
+            this.cannonObject.wakeUp();
+        }
+
+        public get scale(): Type.Vector {
+            return this.mwObject.worldScale;
+        }
+
+        public set scale(s: Type.Vector) {
+            const currentScale = this.mwObject.worldScale.clone();
+            //太近的差距没必要修改
+            if (nearNumber(currentScale.x, s.x) && nearNumber(currentScale.y, s.y) && nearNumber(currentScale.z, s.z)) {
+                return;
+            }
+            this.mwObject.worldScale = s;//修改引擎内的显示物体大小
+            const [changeX, changeY, changeZ] = [s.x / currentScale.x, s.y / currentScale.y, s.z / currentScale.z];//每个轴更改的变化量
+            const newCannonObject = new CANNON.Body({ mass: this._opition.mass, material: this._opition.material });//新的钢体
+            newCannonObject.allowSleep = true;
+            newCannonObject.sleepSpeedLimit = _worldConfig.sleepSpeedLimit;
+            newCannonObject.sleepTimeLimit = _worldConfig.sleepTimeLimit;
+            //修改物理空间内的大小
+            for (let i = 0; i < this._allGeometry.length; i++) {
+                const eshape = this._allGeometry[i];
+
+                const size = this._allMwObject[i].worldScale;
+                let shapeObj: CANNON.Shape = getShapeByMWObject(eshape, size.multiply(100));
+                // switch (eshape) {
+                //     case EGeometry.Box:
+                //         shapeObj = new CANNON.Box(new CANNON.Vec3((size.x * 100) / 2, (size.y * 100) / 2, (size.z * 100) / 2));
+                //         break;
+                //     case EGeometry.Sphere:
+                //         shapeObj = new CANNON.Sphere((size.x * 100) / 2);
+                //         break;
+                // }
+                this._offset[i].x *= changeX;
+                this._offset[i].y *= changeY;
+                this._offset[i].z *= changeZ;
+
+                newCannonObject.addShape(shapeObj, this._offset[i]);
+            }
+
+            newCannonObject.position = this.cannonObject.position;
+            newCannonObject.quaternion = this.cannonObject.quaternion;
+
+            _CWorld.removeBody(this.cannonObject);
+            _CWorld.addBody(newCannonObject);
+            this._body = newCannonObject;
+            this.sync();
+
+        }
+
+
+
+        /**围绕指定轴旋转目标角度 */
+        // public rotateTo(axis: Type.Vector, angle: number) {
+        //     this.mwObject.transform.rotate(axis, angle);
+        //     const mwQua = this.mwObject.worldRotation.toQuaternion()
+        //     this.cannonObject.quaternion.set(mwQua.x, mwQua.y, mwQua.z, mwQua.w);
+        //     this.sync();
+        // }
 
         /**根据自身物理空间对应的物理信息体，同步自身实际物体的绘制 */
         public sync() {
@@ -79,6 +170,7 @@ export namespace CANNONHelp {
             this.mwObject.worldRotation = rot.toRotation();
         }
 
+        /**基于当前位置，增量设置位置 */
         public addPosition(x: number = 0, y: number = 0, z: number = 0) {
             const addX = this.cannonObject.position.x + x;
             const addY = this.cannonObject.position.y + y;
@@ -86,6 +178,30 @@ export namespace CANNONHelp {
             this.cannonObject.position.set(addX, addY, addZ);
             this.sync();
         }
+
+        /**设置向某个方向的位置移动速度，会受到物理属性影响衰减 */
+        public movePosition(direction: Type.Vector, speed: number) {
+            this.cannonObject.velocity.set(
+                direction.x * speed,
+                direction.y * speed,
+                direction.z * speed
+            );
+        }
+
+        /**设置指定向量的角旋转速度，会受到物理属性影响衰减 */
+        public moveAngle(eulerAngle: Type.Vector) {
+            this.cannonObject.angularVelocity.set(
+                eulerAngle.x,
+                eulerAngle.y,
+                eulerAngle.z
+            );
+        }
+
+
+    }
+
+    function nearNumber(n1: number, n2: number, check: number = 0.01): boolean {
+        return Math.abs(n1 - n2) <= check
     }
 
     /**物理空间初始化
@@ -144,72 +260,88 @@ export namespace CANNONHelp {
     /**查找物理空间游戏物体 */
     export function findGameObject(key: number | string): GameObject {
         if (typeof key === "string") {//字符串key
-            return this._guidPair.get(key);
+            return _guidPair.get(key);
         }
         else {
-            return this._idPair.get(key);
+            return _idPair.get(key);
         }
     }
 
     /**设置混合物带有物体特性,会以第一个物体作为此混合对象的根节点
-     * @param mwObjs 混合物体集组 {mw游戏对象，对应的形状枚举，大小(scale*100),物理碰撞中心点偏移   }
+     * @param mwObjs 混合物体集组 {mw游戏对象，对应的形状枚举，大小(scale*100),物理碰撞中心点偏移(只第一个有效)   }
      * @param mass 质量
      * @param mat 材质信息
      */
-    export function setMixture(mwObjs: { mw: Core.GameObject, shape: EGeometry, size: Type.Vector, offset?: [number, number, number] }[], mass?: number, mat?: matConfig): GameObject {
+    export function setMixture(mwObjs: IBuildPhysicsInfo[], mass?: number, mat?: CANNON.IMaterialOptions): GameObject {
         if (mwObjs.length <= 0) { return null; }
         const guid = mwObjs[0].mw.guid;
         if (_guidPair.has(guid)) {
             return _guidPair.get(guid);
         }
 
-        const body = new CANNON.Body({
+        const opition = {
             mass: mass ? mass : _worldConfig.defaultMass,
             material: mat ? new CANNON.Material(mat) : new CANNON.Material(_worldConfig.defaultMat)
-        });
+        }
+
+        const body = new CANNON.Body(opition);
         body.allowSleep = true;
         body.sleepSpeedLimit = _worldConfig.sleepSpeedLimit;
         body.sleepTimeLimit = _worldConfig.sleepTimeLimit;
 
-        const allObj: Core.GameObject[] = [];
-        const { mw: firstobj, shape: firstgeometry, size: firstsize, offset: firstOffset } = mwObjs.splice(0, 1)[0];
-        const rootShape = getShapeByMWObject(firstobj, firstgeometry, firstsize);
+        const allObj: [Core.GameObject, EGeometry, CANNON.Vec3][] = [];
+        const { mw: firstobj, shape: firstgeometry } = mwObjs.splice(0, 1)[0];
+        const firstsize = firstobj.getBoundingBoxSize(true);
+        const rootShape = getShapeByMWObject(firstgeometry, firstsize);
         const rootWorldPos = ConvertCannonV3(firstobj.worldLocation);
-        allObj.push(firstobj);
-        const rootOffset = firstOffset ? new CANNON.Vec3(...firstOffset) : new CANNON.Vec3(0, 0, firstsize.z / 2);
+
+        const rootOffset = new CANNON.Vec3(0, 0, firstsize.z / 2);
+        allObj.push([firstobj, firstgeometry, rootOffset]);
         body.addShape(rootShape, rootOffset);//实际碰撞需要向上偏移高度的一半值
-        for (const { mw, shape, size } of mwObjs) {
+        for (const { mw, shape } of mwObjs) {
             const worldPos = ConvertCannonV3(mw.worldLocation);
             const subVec = worldPos.vsub(rootWorldPos);//根节点到此子物体的物理空间向量
+            //再加上自身根节点偏移值向量
             subVec.x += rootOffset.x;
             subVec.y += rootOffset.y;
             subVec.z += rootOffset.z;
-            body.addShape(getShapeByMWObject(mw, shape, size), subVec);
-            allObj.push(mw);
+            body.addShape(getShapeByMWObject(shape, mw.getBoundingBoxSize(true)), subVec);
+            allObj.push([mw, shape, subVec]);
         }
         _CWorld.addBody(body);
-        return new GameObject(allObj, body);
+        return new GameObject(allObj, body, opition);
     }
 
     /**根据形状获取物体的网格信息对象 */
-    function getShapeByMWObject(mw: Core.GameObject, geometry: EGeometry, size: Type.Vector): CANNON.Shape {
+    function getShapeByMWObject(geometry: EGeometry, size: Type.Vector): CANNON.Shape {
         switch (geometry) {
             case EGeometry.Box://物理空间的Box形状只需要一半的信息
                 return new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
             case EGeometry.Sphere:
-                const radius = size.x / 2;
-                return new CANNON.Sphere(radius);
+                return new CANNON.Sphere(size.x / 2);
+            case EGeometry.Cylinder:
+                return new CANNON.Cylinder(size.x / 2, size.x / 2, size.z, 20);
+            case EGeometry.Cone:
+                return new CANNON.Cylinder(1, size.x / 2, size.z, 20);
+            case EGeometry.Pyramids:
+                return new CANNON.Cylinder(1, size.x / 2, size.z, 4);
+
         }
     }
 
     /**移除某个物体的物理性 */
-    export function removeCANNONBody(guid: string) {
-        const g = findGameObject(guid);
-        if (!g) { return; }
-        findConstraint(g).forEach(c => {
-            removeConstraint(c.id);
-        })
-        _CWorld.remove(g.cannonObject);
+    export function removeCANNONBody(guid: string | GameObject) {
+        let gameobject: GameObject = null;
+        if (typeof guid === "string") {
+            const gameobject = findGameObject(guid);
+            if (!gameobject) { return; }
+        }
+        else {
+            findConstraint(gameobject).forEach(c => {
+                removeConstraint(c.id);
+            })
+            _CWorld.remove(gameobject.cannonObject);
+        }
     }
 
     /**将两个物体依据自身的某个局部坐标点链接约束到一起 */
@@ -258,3 +390,4 @@ export namespace CANNONHelp {
         return new CANNON.Vec3(v3.x, v3.y, v3.z);
     }
 }
+

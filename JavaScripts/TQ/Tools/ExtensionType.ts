@@ -1,61 +1,37 @@
 //对一些新api下的类型写法简化与扩展。
-
-export class Action extends Extension.FunctionUtil.Action { };
-export class Action1<T> extends Extension.FunctionUtil.Action1<T>{ };
-export class Action2<T, U> extends Extension.FunctionUtil.Action2<T, U>{ };
-export class Action3<T, U, V> extends Extension.FunctionUtil.Action3<T, U, V>{ };
-export class StringUtil extends Extension.StringUtil { };
-export class Tween<T> extends Extension.TweenUtil.Tween<T>{ };
-export class GoPool extends Extension.GoPool {
-    public static get instance() {
-        return Extension.GoPool.getInstance();
-    }
-};
-export class SoundManager extends Extension.SoundManager {
-    public static get instance() {
-        return Extension.SoundManager.getInstance();
-    }
-};
-export const EffectManager = Extension.EffectManager;
-// export class EffectManager extends Extension.EffectManager {
-//     public static get instance() {
-//         return Extension.EffectManager.getInstance();
-//     }
-// }
+export type Action = Type.Action;
+export type Action1<T> = Type.Action1<T>;
+export type Action2<T, S> = Type.Action2<T, S>;
+export type Action3<T, S, P> = Type.Action3<T, S, P>;
+export const StringUtil = Util.StringUtil;
+export class Tween<T> extends Util.TweenUtil.Tween<T>{ };
+export const SoundManager = SoundService.getInstance();
+export const EffectManager = EffectService.getInstance();
 
 /**UI的一些扩展辅助函数 */
 export class UIExtend {
-    private static _languageCfg: ICfgBase
-    private static _uimgr: Extension.UIManager = null;
-    public static get UIMgr(): Extension.UIManager {
-        if (!UIExtend._uimgr) {
-            UIExtend._uimgr = Extension.UIManager.instance;
-        }
-        return UIExtend._uimgr;
+    private static _languageCfg: ICfgBase = null;
+    public static readonly UIMgr = UI.UIManager.instance;
+    public static UIMiddleShow(UIObj: UI.UIBehavior, ...params: any[]) {
+        return UIExtend.UIMgr.showUI(UIObj, UI.UILayerMiddle, ...params);
     }
-    public static UIMiddleShow(UIObj: UI.UIBehaviour, ...params: any[]) {
-        return UIExtend.UIMgr.showUI(UIObj, Extension.UILayerMiddle, ...params);
+    public static UITopShow(UIObj: UI.UIBehavior, ...params: any[]) {
+        return UIExtend.UIMgr.showUI(UIObj, UI.UILayerTop, ...params);
     }
-    public static UITopShow(UIObj: UI.UIBehaviour, ...params: any[]) {
-        return UIExtend.UIMgr.showUI(UIObj, Extension.UILayerTop, ...params);
-    }
-    public static UIShowClass<T extends UI.UIBehaviour>(PanelClass: { new(): T; }, ...params: any[]) {
+    public static UIShowClass<T extends UI.UIBehavior>(PanelClass: { new(): T; }, ...params: any[]) {
         return UIExtend.UIMgr.show(PanelClass, ...params);
     }
-    public static UICreate<T extends UI.UIBehaviour>(PanelClass: { new(): T; }, parent?: UI.Canvas): T {
+    public static UICreate<T extends UI.UIBehavior>(PanelClass: { new(): T; }, parent?: UI.Canvas): T {
         let ui: T = UIExtend.UIMgr.create(PanelClass);
         if (parent) {
             parent.addChild(ui.uiObject);
         }
         return ui;
     }
-    public static UIIsShow(UIObj: UI.UIBehaviour) {
-        return UIExtend.UIMgr.isShow(UIObj);
-    }
-    public static UIHide(UIObj: UI.UIBehaviour) {
+    public static UIHide(UIObj: UI.UIBehavior) {
         UIExtend.UIMgr.hideUI(UIObj);
     }
-    public static UIHideClass<T extends UI.UIBehaviour>(PanelClass: { new(): T; }) {
+    public static UIHideClass<T extends UI.UIBehavior>(PanelClass: { new(): T; }) {
         UIExtend.UIMgr.hide(PanelClass);
     }
     /**注册UI多语言逻辑
@@ -64,7 +40,7 @@ export class UIExtend {
      */
     public static BindLanguage(languageCfg: ICfgBase) {
         this._languageCfg = languageCfg;
-        UI.UIBehaviour.addBehaviour("lan", (ui: UI.StaleButton | UI.TextBlock) => {
+        UI.UIBehavior.addBehavior("lan", (ui: UI.StaleButton | UI.TextBlock) => {
             let key: string = ui.text;
             if (key) {
                 let lan = this._languageCfg.getElement(key);
@@ -76,13 +52,12 @@ export class UIExtend {
     }
 
     /**获取多语言字符
-     * 
      * @param lid 多语言表ID
      * @param errorStr 如果没找到的替代文本
      * @param args 多语言格式化参数列表
      * @returns 
      */
-    public static Lanstr(lid: number, errorStr: string, ...args: any[]): string {
+    public static Lanstr(lid: number, errorStr?: string, ...args: any[]): string {
         let ret: string = errorStr;
         if (this._languageCfg) {
             let cfg = this._languageCfg.getElement(lid);
@@ -90,7 +65,7 @@ export class UIExtend {
                 ret = StringUtil.format(cfg.Value, ...args);
             }
             else {
-                ret = StringUtil.format(errorStr, ...args);//errorStr
+                ret = errorStr ? StringUtil.format(errorStr, ...args) : "" + args;//errorStr
             }
         }
         return ret;

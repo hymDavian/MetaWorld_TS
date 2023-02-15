@@ -1,4 +1,4 @@
-import { Action1, Tween } from "./Tools/ExtensionType";
+import { Action1, Tween, UIExtend } from "./Tools/ExtensionType";
 import { Class } from "./Tools/Tools";
 import { Datacenter } from "./tqBase/Datacenter";
 import { NetManager } from "./tqBase/NetManager";
@@ -17,7 +17,7 @@ export abstract class TQGameStart extends Core.Script {
             TQGameStart._instance = this;
         }
         this.UIinit();//客户端初始化UI
-        await Datacenter.init(Global.isMobile(), ...this.getDataClass());//数据层初始化
+        await Datacenter.init(Util.SystemUtil.isMobile(), ...this.getDataClass());//数据层初始化
         NetManager.initNetMgr();//网络传输层初始化
         this.useUpdate = true;//主循环脚本驱动更新
     }
@@ -30,7 +30,7 @@ export abstract class TQGameStart extends Core.Script {
     protected onUpdate(dt: number): void {
         NetManager.update();
         this._customUpdateAct.call(dt);
-        Extension.TweenUtil.TWEEN.update(dt);
+        Util.TweenUtil.TWEEN.update(dt);
     }
 
     /** 脚本被销毁时最后一帧执行完调用此函数 */
@@ -42,14 +42,13 @@ export abstract class TQGameStart extends Core.Script {
     protected abstract getDataClass(): Class<Datacenter.PlayerSaveData>[];
 
     /**第一个打开的UI,一般是loading界面 */
-    protected abstract get firstUI(): Class<UI.UIBehaviour>;
+    protected abstract get firstUI(): Class<UI.UIBehavior>;
 
     /**UI初始化 */
     private UIinit() {
         if (Util.SystemUtil.isClient()) {
-            Extension.UIManager.getInstance(Extension.UIManager);
             if (this.firstUI) {//有自定义初始UI
-                Extension.UIManager.instance.show(this.firstUI);
+                UIExtend.UIShowClass(this.firstUI);
             }
         }
     }

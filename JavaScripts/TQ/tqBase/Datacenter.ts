@@ -246,7 +246,7 @@ export namespace Datacenter {
             if (playerDataSet.has(pid)) {
                 let playerMap = playerDataSet.get(pid);
                 DataStorage.asyncSetPlayerData(player, playerMap.myAllData).then(endFlag => {
-                    console.log("----------->dataLog:" + `save success:${endFlag === DataStorage.DataStorageResultCode.Sucess ? "true" : "errorID[" + endFlag + "]"}`)
+                    console.log("----------->dataLog:" + `save success:${endFlag === DataStorage.DataStorageResultCode.Success ? "true" : "errorID[" + endFlag + "]"}`)
                 })
             }
         }
