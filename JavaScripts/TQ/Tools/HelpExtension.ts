@@ -133,12 +133,13 @@ export function randomItemRange(ranges: number[]): number {
     return ranges.length - 1;
 }
 /**带键值对的对象池 */
+type keyType = string | numObj
 export class KVPool<K, V>{
     private readonly _ItemMap: Map<K, V[]> = new Map();
-    public constructor(private create: ((k: K) => V) | ((k: K) => Promise<V>), private init?: (v: V) => void, private recycle?: (v: V) => void) { }
+    public constructor(private create: (k: K) => V, private init?: (v: V) => void, private recycle?: (v: V) => void) { }
 
     /**根据key获取某种物体,异步获取 */
-    public async getObject(k: K): Promise<V> {
+    public getObject(k: K): V {
         let ret: V = null;
         if (!this._ItemMap.has(k)) {
             this._ItemMap.set(k, []);
@@ -147,7 +148,7 @@ export class KVPool<K, V>{
             ret = this._ItemMap.get(k).shift();
         }
         else {
-            ret = await this.create(k);
+            ret = this.create(k);
         }
         this.init && this.init(ret);
         return ret;

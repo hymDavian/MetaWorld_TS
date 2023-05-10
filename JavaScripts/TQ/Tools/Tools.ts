@@ -237,3 +237,19 @@ export class Tools {
 
 }
 
+function onPropertyChangeDo<T extends Core.Script>(path: string[], funcName: string) {
+    const arr = (path as unknown as string).split('.');
+    const [clsName, guid, ...members] = arr;
+    Core.ScriptManager.asyncFindScript(guid).then(val => {
+        if (val) {
+            const obj = val as T;
+            const f = obj[funcName] as Function;
+            try {
+                f.call(obj);
+            } catch (error) {
+                console.error(`replicated error,script:${guid},function:${funcName},errorMsg:\n${error.stack}`)
+            }
+        }
+    })
+}
+
