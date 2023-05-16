@@ -17,7 +17,7 @@ export namespace UIDebug {
     /**初始化 */
     function setUIClass() {
         uiObject = createMsgUI();
-        uiObject.uiObject.zOrder = 600000;
+        // uiObject.uiObject.zOrder = 0;
         UI.UIManager.instance.canvas.addChild(uiObject.uiObject);
         uiObject.setVisible(false);
     }
@@ -63,11 +63,15 @@ export namespace UIDebug {
             msgTxts[i].size = Type.Vector.zero;
 
         }
-        lastUseIndex = 0;
-        lastPosY = 0;
+        lastUseIndex = -1;
+        nextPosY = 0;
+        logNumMap.clear();
     }
-    /**添加新文本并显示 */
-    export function log(msg: string, color: Type.LinearColor = Type.LinearColor.white, size?: number) {
+
+    const logNumMap: Map<number, number> = new Map();
+
+    /**添加新文本并显示,返回文本对象 */
+    export function log(msg: string, color: Type.LinearColor = Type.LinearColor.white, key: number = -1, size?: number): number {
         if (!msg || msg.length <= 0) {
             return;
         }
@@ -75,38 +79,70 @@ export namespace UIDebug {
             setUIClass();
         }
         uiObject.setVisible(true);
-        getTxtBlock(msg, color, size ? size : txtSize);
-        uiObject.messageScroll.scrollToEnd();
+
+
+        if (key < 0 || key == undefined || key == null) {//第一次创建
+            return getTxtBlock(msg, color, size ? size : txtSize);
+        }
+        else {
+            if (msgTxts[key]) {//重复访问
+                let t = 1;
+                if (logNumMap.has(key)) {
+                    t = logNumMap.get(key) + 1;
+                    logNumMap.set(key, t);
+                }
+                msgTxts[key].text = `[${t}]` + msg;
+                msgTxts[key].fontColor = color;
+                return key;
+            }
+            else {
+                return getTxtBlock(msg, color, size ? size : txtSize);
+            }
+        }
+
+        // uiObject.messageScroll.scrollToEnd();
     }
 
     let lastUseIndex: number = -1;
-    let lastPosY: number = 0;
-    function getTxtBlock(txt: string, color: Type.LinearColor, size: number) {
-        let ret: UI.TextBlock = null;
-        if (lastUseIndex < 0) {//需要新建文本对象
-            ret = UI.TextBlock.newObject(uiObject.rootCanvas);
-            uiObject.messageScroll.addChild(ret);
-            ret.textHorizontalLayout = UI.UITextHorizontalLayout.AutoWarpText;
-            ret.size = new Type.Vector(TxtWidth, 1);
-            ret.position = new Type.Vector(0, lastPosY);
-            ret.lineHeightPercentage = 0.6
-            ret.fontSize = txtSize;
+    let nextPosY: number = 0;
 
-            msgTxts.push(ret);
+    export function getShowItemNum() {
+        return lastUseIndex + 1;
+    }
+    function getTxtBlock(txt: string, color: Type.LinearColor, size: number): number {
+        let ret: number = 0;
+        let txtObj: UI.TextBlock = null;
+        if (lastUseIndex >= (msgTxts.length - 1)) {//需要新建文本对象
+
+            txtObj = UI.TextBlock.newObject(uiObject.rootCanvas);
+            uiObject.messageScroll.addChild(txtObj);
+            txtObj.textHorizontalLayout = UI.UITextHorizontalLayout.AutoWarpText;
+            txtObj.size = new Type.Vector(TxtWidth, 1);
+            // ret.position = new Type.Vector(0, nextPosY);
+            txtObj.lineHeightPercentage = 0.6
+            txtObj.fontSize = txtSize;
+
+            msgTxts.push(txtObj);
+            lastUseIndex = msgTxts.length - 1;
+            ret = lastUseIndex;
         }
         else {
-            ret = msgTxts[lastUseIndex];
             lastUseIndex++;
-            if (lastUseIndex >= msgTxts.length) {
-                lastUseIndex = -1;
-            }
+            txtObj = msgTxts[lastUseIndex];
+            ret = lastUseIndex;
         }
-        ret.fontSize = size;
-        ret.text = txt;
+        txtObj.fontSize = size;
+        txtObj.text = txt;
 
-        ret.size = new Type.Vector(TxtWidth, ret.textHeight + 10);
-        lastPosY += ret.size.y;
-        ret.fontColor = color;
+        txtObj.size = new Type.Vector(TxtWidth, txtObj.textHeight + 10);
+        txtObj.position = new Type.Vector(0, nextPosY);
+        nextPosY = txtObj.size.y + nextPosY;
+        // lastPosY += ret.size.y;
+        txtObj.fontColor = color;
+        if (!logNumMap.has(ret)) {
+            logNumMap.set(ret, 1);
+        }
+        return ret;
     }
     /**输出红色的ERROR堆栈字符串 */
     export function logError(error: string) {
