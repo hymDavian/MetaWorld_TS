@@ -55,7 +55,7 @@ export class StateMachine<T> {
     /**
     * 注册状态update
     * @param state 状态
-    * @param func update回调
+    * @param func update回调 dt:number (ms)毫秒
     */
     public registerUpdate(state: T, update: (dt: number) => void) {
         let has = this._states.has(state)
@@ -86,10 +86,16 @@ export class StateMachine<T> {
         }
     }
 
-    public update(dt): void {
+    private beforeDt: number = 0;
+    public update(dt?: number): void {
+
         if (this.currentState) {
+            if (!this.beforeDt) {
+                this.beforeDt = Date.now();
+            }
             let func = this._states.get(this.currentState)
-            func.update && func.update(dt)
+            func.update && func.update(dt ? dt : (Date.now() - this.beforeDt))
+            this.beforeDt = Date.now();
         }
     }
 

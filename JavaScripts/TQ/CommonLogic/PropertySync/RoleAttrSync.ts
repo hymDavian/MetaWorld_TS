@@ -1,218 +1,160 @@
-﻿
-import { ERoleProperty, ERolePropertyServer, LongNum } from "./Attrs";
+/* eslint-disable eqeqeq */
+/* eslint-disable mwts-rules/no-chinese-character */
+/* eslint-disable lines-between-class-members */
 
-type createArgs<T> = {
-    /**初始化设置模型 */
-    model?: Core.GameObject,
-    /**初始化设置名称 */
-    nickNmae?: string,
-    /**初始化完毕后的回调函数 */
-    callback?: (role: T) => void
-}
-/**角色属性同步对象基类(玩家和npc都基于此对象实现自己的属性同步类) */
-export abstract class RoleAttrSync extends Core.Script {
-    //所有被实例化过的角色属性同步对象都在此集合内
-    private static readonly allRoles: Map<number, RoleAttrSync> = new Map();
-    /**根据ID获取角色属性脚本 */
-    public static getRole(roleid: number) { return RoleAttrSync.allRoles.get(roleid); }
-    /**[server] 新实例化一个属性同步脚本对象
-     * 
-     * @param scriptClass 使用的脚本基类
-     * @param id 唯一ID
-     * @param args (可选)初始化参数
-     * @returns 
-     */
-    public static createRole<T extends RoleAttrSync>(scriptClass: new (...args: unknown[]) => T, id: number, args?: createArgs<T>) {
-        if (Util.SystemUtil.isClient()) { return; }//客户端无法创建
-        if (RoleAttrSync.allRoles.has(id)) {
-            if (args) {
-                const role = RoleAttrSync.allRoles.get(id);
-                args.model && role.setModel(args.model);
-                args.nickNmae && role.setNickName(args.nickNmae);
-                args.callback && args.callback(role as T);
+//属于某个玩家的所有单位的属性同步脚本
+export abstract class RoleAttrSync<T> extends Core.Script {
+    /**分配某种属性给某个单位 */
+    protected setDataToUnitInfo(ty: string, uid: number) {
+        if (!globalThis.battleModuleClient.isLocalBattlePlayer(this.pid)) return;//不是本地正在作战的玩家，不需要去分配属性
+        const length = this.getvalueLength(ty);//单个单位所需此属性的长度
+        const uidIndex = this.unitIDS.indexOf(uid);//单位ID索引
+        if (uidIndex < 0) return;
+        const dataArr = this.getAttrArrayByType(ty);//属性集合
+        const unit = this._allUnits.get(uid);
+        if (!unit) return;
+        const attrIndex = uidIndex * length;
+        const data = dataArr.slice(attrIndex, attrIndex + length);
+        if (data.length === 0) return;
+        if (length === 1) {//单一值属性
+            if (unit.object) {
+                this.onAttrSyncChange(unit.object, ty, data[0]);
             }
-            return;
-        } //之前创建过，直接返回
-        const syncScript = Core.Script.spawnScript(scriptClass);
-        syncScript.then(role => {
-            setTimeout(() => {
-                role.setRoleID(id);
-                if (args) {
-                    args.model && role.setModel(args.model);
-                    args.nickNmae && role.setNickName(args.nickNmae);
-                    args.callback && args.callback(role);
-                }
-            }, 100);
-        });
-    }
-
-    /**[client] 当前玩家的属性脚本对象 */
-    public static get currentRole(): RoleAttrSync {
-        if (Util.SystemUtil.isServer()) { return null; }
-        return RoleAttrSync.allRoles.get(Gameplay.getCurrentPlayer().getPlayerID());
-    }
-
-    @Core.Property({ replicated: true, onChanged: "onNameChange" })
-    private _nickName: string = null;
-    /**名称 */
-    public get nickName(): string { return this._nickName; }
-    /**[server] 设置名称 */
-    public setNickName(name: string) {
-        if (Util.SystemUtil.isServer()) {
-            this._nickName = name;
-        }
-    }
-    private onNameChange() {
-        if (this._nickName) {
-            this.onNickNameChange(this._nickName);
-        }
-    }
-    /**仅客户端会调用，当角色名称nickName属性更改时执行 */
-    protected abstract onNickNameChange(nickName: string);
-
-    @Core.Property({ replicated: true, onChanged: "onIDChange" })
-    private _roleID: number = null;
-    /**自身角色数字ID,玩家为玩家ID，AI为一个自定义的自增数字ID */
-    public get roleID(): number { return this._roleID; }
-    /** 角色数字ID只能设置一次，用于Map内定位此对象 */
-    private setRoleID(id: number): void {
-        if (Util.SystemUtil.isServer()) {
-            if (!this._roleID) {
-                this._roleID = id;
-                this.onIDChange();
-            }
-        }
-    }
-    //这里另外开一个函数作为属性变更回调，是用于可以让客户端和服务器都能在设置数字ID时放到静态Map内
-    private onIDChange() {
-        RoleAttrSync.allRoles.set(this._roleID, this);
-        console.log("初始化属性同步对象：" + this.roleID);
-    }
-
-    @Core.Property({ replicated: true, onChanged: "onModelSet" })
-    private _modelGuid: string = null;
-    private onModelSet() {
-        Core.GameObject.asyncFind(this._modelGuid).then(g => {
-            this._model = g;
-        })
-    }
-
-    private _model: Core.GameObject = null;
-    /**自身模型对象 */
-    public get model(): Core.GameObject {
-        if (!this.model) {
-            this._model = Core.GameObject.find(this._modelGuid);
-        }
-        return this._model;
-    }
-    public setModel(m: Core.GameObject): void {
-        if (Util.SystemUtil.isServer()) {
-            this._model = m;
-            this._modelGuid = m.guid;
-        }
-    }
-
-    //--------------------其他自定义属性同步变更-----------------------------
-    /**相关属性变更后的表现 (双端对应时机都会调) */
-    protected abstract onPropertyChange(ty: ERoleProperty, val: number);
-
-    @Core.Property({ replicated: true, onChanged: "onAttrChange" })
-    private _attrs: number[] = []
-    private _oldValues: { [ty: number]: number } = {};
-    /**客户端收到属性同步变更后要做的变更 */
-    protected onAttrChange(): void {
-        for (const k in this._attrs) {
-            const newVal = this._attrs[k];
-            this.clientSetAttr(Number(k), newVal);
-        }
-    }
-
-    /**双端 根据属性类型获取属性值 */
-    public getAttr(ty: ERoleProperty): number {
-        let ret = 0;
-        if (ERolePropertyServer.has(ty)) {
-            if (Util.SystemUtil.isClient()) {
-                console.error(`${ty}是一个服务器属性，但此时客户端在获取，请检查逻辑！`)
-            }
-            ret = this._serverData.get(ty);
         }
         else {
-            ret = this._attrs[ty];
-        }
-        return ret ? ret : 0
-    }
-
-    /**服务器 设置属性类型对应的值 */
-    public setAttr(ty: ERoleProperty, val: number) {
-        if (Util.SystemUtil.isServer()) {
-            this.serverSetAttr(ty, val);
-        }
-    }
-
-    /**服务器 批量设置属性值 */
-    public setAttrAll(...vals: [ERoleProperty, number][]) {
-        if (Util.SystemUtil.isServer()) {
-            if (!vals || vals.length <= 0) {
-                return;
-            }
-            for (let arg of vals) {
-                this.serverSetAttr(arg[0], arg[1]);
+            if (unit.object) {
+                this.onAttrSyncChange(unit.object, ty, data);
             }
         }
+    }
+    protected abstract onAttrSyncChange(obj: T, ty: string, data: unknown)
+    /**分配某种属性给全体单位 */
+    protected setDataToUnitInfoAll(ty: string) {
+        if (!globalThis.battleModuleClient.isLocalBattlePlayer(this.pid)) return;
+        for (const uid of this.unitIDS) {
+            this.setDataToUnitInfo(ty, uid);
+        }
+    }
+    /**根据属性类型获取自身某个数组成员 */
+    protected abstract getAttrArrayByType(type: string): unknown[];
+    /**实际在客户端删除对象实体和模型 */
+    protected abstract realDeleteOnClient(uid: number);
+    /**清除某个单位的数据 */
+    protected clearDataByUid(uid: number) {
+        const uidIndex = this.unitIDS.indexOf(uid);//单位ID索引
+        if (uidIndex < 0) return;
+        for (const k of this.allKeys) {
+            const length = this.getvalueLength(k);//单个单位所需此属性的长度
+            const attrIndex = uidIndex * length;
+            const dataArr = this.getAttrArrayByType(k);//属性集合
+            dataArr.splice(attrIndex, length);
+        }
+    }
+    /**获取某个单位 */
+    public getUnitInfo(uid: number) {
+        return this._allUnits.get(uid);
+    }
+    /**删除某个单位 */
+    public deleteUnit(uid: number) {
+        if (this.unitIDS.indexOf(uid) >= 0) {
+            this.clearDataByUid(uid);
+            this.unitIDS.splice(this.unitIDS.indexOf(uid), 1);
+        }
+        if (SystemUtil.isClient() && globalThis.battleModuleClient.isLocalBattlePlayer(this.pid)) {
+            this.realDeleteOnClient(uid);//删除这个单位
+        }
+        else {
+            if (this._allUnits.has(uid)) {
+                this._allUnits.delete(uid);
+            }
+        }
+    }
+    /**设置属性值(非权威端端调用会被同步覆盖) */
+    public setAttr(uid: number, attr: string, val: unknown) {
+        const index = this.unitIDS.indexOf(uid);//这个单位的属性索引
+        if (index < 0) { return; }
+        const arr = this.getAttrArrayByType(attr);
+        const length = this.getvalueLength(attr);
+        if (length > 1) {//数组集合信息要做特殊处理
+            const indexBegin = index * length;
+            for (let i = 0; i < length; i++) {
+                arr[indexBegin + i] = val[i] ? val[i] : 0;
+            }
+        }
+        else {
+            arr[index] = val ? val : 0;
+        }
+        // this.getUnit(uid)[attr] = val as any;
+        this.setDataToUnitInfo(attr, uid);
+    }
+    /**创建双端都持有的属性集 */
+    protected abstract createDefaultUnitInfo(uid: number): IUnitInfo<T>;
+    /**创建客户端控制对象 */
+    protected abstract createClientObject(uid: number): T;
+    /**获取各个属性的取值长度 */
+    protected abstract getvalueLength(ty: string): number;
+    /**获取所有属性的键名 */
+    protected abstract get allKeys(): string[];
+    /**创建此玩家的指定某个单位数据 */
+    public createUnit(uid: number): IUnitInfo<T> {
+        if (!this._allUnits.has(uid) && this.unitIDS.indexOf(uid) >= 0) {
+            const defaultUnitInfo = this.createDefaultUnitInfo(uid);
+            this._allUnits.set(uid, defaultUnitInfo)
+            if (SystemUtil.isClient() && globalThis.battleModuleClient.isLocalBattlePlayer(this._pid)) {//客户端一定要生成表现对象组件
+                this._allUnits.get(uid).object = this.createClientObject(uid);
+            }
+        }
+        return this._allUnits.get(uid);
+    }
+    /**当所有单位被清理后要做的事 */
+    public abstract onClaerAll();
 
+
+
+
+    /**所有单位信息(外部友好的数据结构) */
+    protected readonly _allUnits: Map<number, IUnitInfo<T>> = new Map();
+    public static readonly AllScripts: Map<string, RoleAttrSync<any>> = new Map();
+    @Core.Property({ replicated: true, onChanged: "oncreate" })
+    private _pid: string;
+    /**玩家唯一平台ID */
+    public get pid() { return this._pid; }
+    private oncreate() {
+        RoleAttrSync.AllScripts.set(this._pid, this);
     }
 
-    /**调用属性变更函数 */
-    private serverSetAttr(ty: ERoleProperty, val: number) {
-        ty = this.LongIndexToLower(ty);
-        if (ERolePropertyServer.has(ty)) {//仅设置服务器属性
-            const oldVal = this._serverData.get(ty);
-            if (val === 0 && oldVal === 0) { return; }//旧值新值都为0时，不需要做变更调用
-            if (!oldVal || oldVal != val) {
-                this._serverData.set(ty, val);
-                this.onPropertyChange(ty, val);
-            }
-            return;
-        }
-
-        if (!this._attrs) {
-            this._attrs = [];
-        }
-        if (!this._oldValues) {
-            this._oldValues = {};
-        }
-        const oldVal = this._oldValues[ty];
-        if (!oldVal || oldVal != val) {
-            this._oldValues[ty] = val;
-            this._attrs[ty] = val;
-            //补足不存在的元素0
-            for (let i = 0; i < this._attrs.length; i++) {
-                if (!this._attrs[i]) {
-                    this._attrs[i] = 0;
+    @Core.Property({ replicated: true, onChanged: "onIDChange" })
+    /**可信数据 单位id */
+    public readonly unitIDS: number[] = [];
+    private onIDChange() {
+        for (let i = 0; i < this.unitIDS.length; i++) {
+            const uid = this.unitIDS[i];
+            if (!this._allUnits.has(uid)) {//如果之前没有创建过这个单位，但可能属性已经被同步过来了
+                this.createUnit(uid);
+                for (const k of this.allKeys) {
+                    this.setDataToUnitInfo(k, uid);
                 }
             }
-            this.onPropertyChange(ty, val);
+        }
+        for (const [k] of this._allUnits) {//从已有的客户端数据集内与属性同步的单位ID做比对
+            if (!this.unitIDS.includes(k)) {//属性同步上的单位ID已经不存在这个单位了，但是客户端数据还存在
+                this.realDeleteOnClient(k);//删除这个单位
+            }
         }
     }
 
-    private clientSetAttr(ty: ERoleProperty, val: number) {
-        // ty = this.LongIndexToLower(ty);
-        if (!this._oldValues) {
-            this._oldValues = {};
-        }
-        const oldVal = this._oldValues[ty];
-        if (val === 0 && oldVal === 0) { return; }//特殊情况，0也会作为计算机的false的判断条件
-        if (!oldVal || oldVal != val) {
-            this._oldValues[ty] = val;
-            this.onPropertyChange(ty, val);
-        }
-    }
-
-    /**将一些配置表的属性枚举值转为定义枚举值 */
-    private LongIndexToLower(n1: number): number {
-        return LongNum[n1] ? LongNum[n1] : n1;
-    }
-
-    /**仅服务器存在的数据 */
-    private readonly _serverData: Map<ERoleProperty, number> = new Map();
 }
+
+/**双端的纯数据层单位对象 */
+export interface IUnitInfo<T> {
+    /**单位唯一ID */
+    uid: number,
+    /**逻辑运用单位类 */
+    object: T
+
+    /**其他自定义成员 */
+    // [k: string]: unknown,
+
+}
+
+
