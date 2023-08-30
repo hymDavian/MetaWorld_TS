@@ -8,20 +8,24 @@ type MoveTransform = { location: Type.Vector, lookAt?: (look: Type.Vector, lookZ
 const DEBUG = false;//是否显示坐标变更辅助小球
 /**移动控制器 */
 class MoveController {
+    /**移动完成回调 */
+    public readonly onCompelete: ActionCallback = [];
+    /**调用moveto时开始移动条件，如果没有判定通过，此次调用moveto无效 */
+    public readonly moveCondition: ConditionCallback<any> = [];
+    /**移动限制轴,会在执行设置移动目标时限定到目标点的对应轴不进行变化 */
+    public readonly moveLimitAxis: { x: boolean, y: boolean, z: boolean } = { x: false, y: false, z: false };
+    public endureDistance: number = 5;//移动容忍距离
+    public get running() { return this._running; }//是否正在移动
+    public getSpeed: () => number = () => 0;//获取移动速度的方式
+    /**每帧坐标修改检查条件，会传入接下来这一帧应该到的点，判断当前上下文条件是否允许移动到这个点，如果不允许则需要返回false,此帧的移动行为就失败了 */
+    public readonly onNextMovePosCheck: ConditionCallback<Type.Vector> = [];
+
     private _transform: MoveTransform;//自身移动组件
     private readonly _toPoint: Type.Vector = new Type.Vector();//目标点
     private readonly _tempMovePoint: Type.Vector = new Type.Vector();//临时移动点
     private _lookAt: Type.Vector = null;//最终朝向点
-    public readonly onCompelete: ActionCallback = [];//移动完成回调
-    public readonly moveCondition: ConditionCallback<any> = [];//移动条件
-    public readonly moveLimitAxis: { x: boolean, y: boolean, z: boolean } = { x: false, y: false, z: false };//移动限制轴
     private readonly _moveLimitRect: { x: [number, number], y: [number, number], z: [number, number] } = { x: null, y: null, z: null };//移动限制矩形
-    public endureDistance: number = 5;//移动容忍距离
     private _running: boolean = false;//是否正在移动
-    public get running() { return this._running; }//是否正在移动
-    public getSpeed: () => number = () => 0;//获取移动速度的方式
-
-    public readonly onNextMovePosCheck: ConditionCallback<Type.Vector> = [];//下一次移动前检查回调
     private readonly _moveHelpDisplay: Core.GameObject = null;//移动辅助显示对象
 
     constructor() {
@@ -38,7 +42,12 @@ class MoveController {
         this._moveLimitRect[axis] = [Math.min(a, b), Math.max(a, b)];
     }
 
-    /**移动向目标，返回是否已经成功抵达了不需要移动 */
+    /**取消移动限定区域 */
+    public cancelLimitRect(axis: "x" | "y" | "z") {
+        this._moveLimitRect[axis] = null;
+    }
+
+    /**移动向目标，返回是否成功移动，或者已经抵达了目标不需要移动 */
     public moveTo(toPoint: Type.Vector | [number, number, number], lookAt: Type.Vector = null): boolean {
         if (!toPoint) { return true; }
         for (const condition of this.moveCondition) {
@@ -72,6 +81,7 @@ class MoveController {
         if (this.endureDistance > 0) {
             const distance = this.compexDistance(this._toPoint, true);
             if (distance < this.endureDistance) {
+                this.stopMove(true);
                 return true;
             }
         }
@@ -124,7 +134,6 @@ class MoveController {
         Type.Vector.lerp(this._transform.location, this._toPoint, lerp, this._tempMovePoint);
         for (const callback of this.onNextMovePosCheck) {
             if (!callback(this._tempMovePoint)) {
-                callback(this._tempMovePoint)
                 return;
             }
         }
