@@ -2,36 +2,10 @@
 export namespace BulletChatUI {
     const Event_serverCallClientBullet: string = "Event_serverCallClientBullet";
     let bindNet: boolean = false
-    let rootCanvas: UI.Canvas = null;//弹幕使用的画布UI对象
+    let rootCanvas: mw.Canvas = null;//弹幕使用的画布UI对象
     const msgTexts: BulletChat[] = [];//弹幕列表
     let axisMin: number = 0;
     let axisMax: number = 500;
-
-    export function debugError() {
-        return function (target: any, propertyRey: string, description: PropertyDescriptor) {
-            if (description.value && typeof description.value === "function") {
-                let oldFunc = description.value;
-                description.value = function (...args: any[]) {
-                    try {
-                        oldFunc(...args);
-                    } catch (error) {
-                        let arr: string[] = error.stack.split('\n');
-                        const strtitle = arr.splice(0, 1)[0];
-                        let height = 0;
-                        createBulletChat(strtitle, 3000 * strtitle.length, Type.LinearColor.red, height);
-                        arr.forEach(s => {
-                            height += 30;
-                            const begin = s.indexOf('at') + 2;
-                            const end = s.indexOf('(');
-                            const stackStr = s.slice(begin, end);
-                            createBulletChat(stackStr, 3000 * stackStr.length, Type.LinearColor.red, height);
-                        })
-                    }
-
-                }
-            }
-        }
-    }
 
     /**初始化弹幕的相关设定
      * 
@@ -40,7 +14,7 @@ export namespace BulletChatUI {
      * @param canvas 出现的画布
      * 
      */
-    export function init(min: number, max: number, canvas: UI.Canvas) {
+    export function init(min: number, max: number, canvas: mw.Canvas) {
         if (!min || Number.isNaN(min)) {
             axisMin = 0;
         }
@@ -56,18 +30,18 @@ export namespace BulletChatUI {
         }
         rootCanvas = canvas;
 
-        if (Util.SystemUtil.isClient() && !bindNet) {
+        if (SystemUtil.isClient() && !bindNet) {
             bindNet = true;
-            Events.addServerListener(Event_serverCallClientBullet, (msg: string, time: number, color: Type.LinearColor) => {
+            mw.Event.addServerListener(Event_serverCallClientBullet, (msg: string, time: number, color: mw.LinearColor) => {
                 createBulletChat(msg, time, color);
             })
         }
     }
 
-    export function createBulletChat(msg: string, time: number = 10000, color: Type.LinearColor = Type.LinearColor.white, lockY: number = -1) {
+    export function createBulletChat(msg: string, time: number = 10000, color: mw.LinearColor = mw.LinearColor.white, lockY: number = -1) {
 
-        if (Util.SystemUtil.isServer()) {
-            Events.dispatchToAllClient(Event_serverCallClientBullet, msg, time, color);
+        if (SystemUtil.isServer()) {
+            mw.Event.dispatchToAllClient(Event_serverCallClientBullet, msg, time, color);
             return;
         }
 
@@ -83,11 +57,11 @@ export namespace BulletChatUI {
             time = Number.isNaN(time) ? 2000 : time;
             let bc = getNewBc(msg, lockY);
             bc.txt.fontColor = (color);
-            bc.txt.outlineColor = (Type.LinearColor.black);
+            bc.txt.outlineColor = (mw.LinearColor.black);
             bc.txt.outlineSize = (1)
             let endpos = { x: bc.size.x * -1, y: bc.pos.y };//获取结束点
-            const slot = bc.txt.slot;
-            const changePos = new Type.Vector(0, 0);
+            const slot = bc.txt;
+            const changePos = new mw.Vector(0, 0);
 
             new TweenClass.Tween(bc.pos).to(endpos, time).onUpdate(pos => {
                 changePos.x = pos.x;
@@ -106,7 +80,7 @@ export namespace BulletChatUI {
         msg = msg.toString();
         let bc = msgTexts.find(v => { return !v.run });
         if (!bc) {//没找到没使用的旧弹幕对象
-            let ui = UI.TextBlock.newObject(rootCanvas, "msgUIObject");
+            let ui = mw.TextBlock.newObject(rootCanvas, "msgUIObject");
             rootCanvas.addChild(ui)
             bc = {
                 txt: ui,
@@ -123,11 +97,11 @@ export namespace BulletChatUI {
         else {
             bc.run = true;//置为正在使用中
         }
-        bc.pos.x = rootCanvas.slot.size.x;//放到屏幕右边
+        bc.pos.x = rootCanvas.size.x;//放到屏幕右边
         bc.pos.y = lockY < 0 ? Math.random() * (axisMax - axisMin) + axisMin : lockY;//随机Y轴
         bc.size.x = 40 * msg.length;//字符对象长度
         bc.txt.text = (msg);
-        bc.txt.slot.size = (new Type.Vector2(bc.size.x, bc.size.y))
+        bc.txt.size = (new mw.Vector2(bc.size.x, bc.size.y))
 
         return bc;
     }
@@ -139,7 +113,7 @@ export namespace BulletChatUI {
 
     /**弹幕使用的信息类 */
     type BulletChat = {
-        txt: UI.TextBlock,
+        txt: mw.TextBlock,
         run: boolean,
         pos: { x: number, y: number },
         size: { x: number, y: number }

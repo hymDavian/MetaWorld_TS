@@ -5,11 +5,11 @@
 /* eslint-disable prefer-const */
 
 interface ErrorMessageUI {
-    messageScroll: UI.ScrollBox
+    messageScroll: mw.ScrollBox
 
     /**UI集合对象 */
-    rootCanvas: UI.Canvas,
-    uiObject: UI.Widget,
+    rootCanvas: mw.Canvas,
+    uiObject: mw.Widget,
     /**设置显隐 */
     setVisible: (active: boolean) => void,
 }
@@ -42,7 +42,7 @@ namespace InUIDebug {
                 LinkServer.slog(args.join(','));
             }
             if (SystemUtil.isClient()) {
-                innerLog(args.join(','), Type.LinearColor.yellow);
+                innerLog(args.join(','), mw.LinearColor.yellow);
             }
             cwarn(...args);
         }
@@ -52,7 +52,7 @@ namespace InUIDebug {
                 LinkServer.slog(args.join(','));
             }
             if (SystemUtil.isClient()) {
-                innerLog(args.join(','), Type.LinearColor.red);
+                innerLog(args.join(','), mw.LinearColor.red);
             }
             cerror(...args);
         }
@@ -74,7 +74,7 @@ namespace InUIDebug {
             if (!Data.uiObject) { return; }
             for (let i = 0; i < Data.msgTxts.length; i++) {
                 Data.msgTxts[i][1].text = "";
-                Data.msgTxts[i][1].size = Type.Vector.zero;
+                Data.msgTxts[i][1].size = mw.Vector.zero;
             }
             Data.lastUseIndex = -1;
             Data.nextPosY = 0;
@@ -86,6 +86,9 @@ namespace InUIDebug {
             Data.uiObject && Data.uiObject.setVisible(false);
         }
         export function open() {
+            if (SystemUtil.isServer()) {
+                return;
+            }
             if (!Data.uiObject) {
                 Data.setUIClass();
             }
@@ -94,31 +97,31 @@ namespace InUIDebug {
         }
     }
     /**打印到内置控制台,返回文本ID。如果是服务器调用，则在所有客户端打印紫色文本，不会返回文本id */
-    export function log(msg: string, color: Type.LinearColor = Type.LinearColor.white, key: number = null, size?: number): number {
+    export function log(msg: string, color: mw.LinearColor = mw.LinearColor.white, key: number = null, size?: number): number {
         if (!hackLog) {
             console.log(msg);
         }
         return innerLog(msg, color, key, size);
     }
     /**注册触摸开启 */
-    export function RegisterInput(...touchPoints: Type.Vector2[]) {
+    export function RegisterInput(...touchPoints: mw.Vector2[]) {
         if (SystemUtil.isServer()) { return; }
-        const view = UI.getViewportSize();
-        const center = new Type.Vector2(view.x / 2, view.y / 2);
-        const checkPoints: Type.Vector2[] = touchPoints.length > 0 ? touchPoints : [
-            new Type.Vector2(view.x / 2, view.y),//下
-            new Type.Vector2(view.x / 2, 0),//上
-            new Type.Vector2(0, view.y / 2),//左
-            new Type.Vector2(view.x, view.y / 2),//右
+        const view = mw.getViewportSize();
+        const center = new mw.Vector2(view.x / 2, view.y / 2);
+        const checkPoints: mw.Vector2[] = touchPoints.length > 0 ? touchPoints : [
+            new mw.Vector2(view.x / 2, view.y),//下
+            new mw.Vector2(view.x / 2, 0),//上
+            new mw.Vector2(0, view.y / 2),//左
+            new mw.Vector2(view.x, view.y / 2),//右
         ];
         let checkIndex = 0;//当前需要的检查目标索引
         const checkDistance = 50;//检查距离
-        const touch = new Gameplay.TouchInput();
-        touch.setPlayerController();
+        const touch = new mw.TouchInputUtil;
+        // touch.setPlayerController();
         let checkFlag = false;//是否从正中心以及控制台在关闭状态下触发过检查
         touch.onTouchBegin.add((index, loc) => {
             if (openLog) { return; }//已经被打开了
-            const dis = Type.Vector2.distance(center, loc);
+            const dis = mw.Vector2.distance(center, loc);
             if (dis < checkDistance) {
                 checkFlag = true;
             }
@@ -127,7 +130,7 @@ namespace InUIDebug {
             if (!checkFlag) { return; }//没有触发过检查
             checkFlag = false;
             const target = checkPoints[checkIndex];
-            const dis = Type.Vector2.distance(target, loc);
+            const dis = mw.Vector2.distance(target, loc);
             if (dis > checkDistance) {
                 checkIndex = 0;
                 return;
@@ -136,7 +139,7 @@ namespace InUIDebug {
             if (checkIndex >= checkPoints.length) {
                 checkIndex = 0;
                 openLog = true;
-                log(`开启控制台!`, Type.LinearColor.green);
+                log(`开启控制台!`, mw.LinearColor.green);
             }
             else {
                 console.log(`next:${checkPoints[checkIndex]}`);
@@ -145,7 +148,7 @@ namespace InUIDebug {
     }
 
     //实际的打印逻辑实现,避免调用截断console函数后的递归调用
-    function innerLog(msg: string, color: Type.LinearColor = Type.LinearColor.white, key: number = null, size?: number) {
+    function innerLog(msg: string, color: mw.LinearColor = mw.LinearColor.white, key: number = null, size?: number) {
         if (SystemUtil.isServer()) {
             LinkServer.slog(msg);
             return;
@@ -193,13 +196,13 @@ namespace InUIDebug {
         function logError(error: string) {
             let arr: string[] = error.split('\n');
             const strtitle = arr.splice(0, 1)[0];
-            log(strtitle, Type.LinearColor.red);
+            log(strtitle, mw.LinearColor.red);
 
             arr.forEach(s => {
                 const begin = s.indexOf('at') + 2;
                 const end = s.indexOf('(');
                 const stackStr = s.slice(begin, end);
-                log(stackStr, Type.LinearColor.red, 25);
+                log(stackStr, mw.LinearColor.red, 25);
             })
         }
         const errorLine: Set<number> = new Set();
@@ -218,9 +221,9 @@ namespace InUIDebug {
                                 return;
                             }
                             errorLine.add(line);
-                            log("-------", Type.LinearColor.red);
+                            log("-------", mw.LinearColor.red);
                             logError(error.stack);
-                            log("-------", Type.LinearColor.red);
+                            log("-------", mw.LinearColor.red);
                         }
 
                     }
@@ -228,19 +231,16 @@ namespace InUIDebug {
             }
         }
         // const funcCallNum: Map<string | symbol, number> = new Map();
-        const colorLevel: [number, Type.LinearColor][] = [
-            [0.1, Type.LinearColor.green],
-            [1, Type.LinearColor.white],
-            [10, Type.LinearColor.blue]
+        const colorLevel: [number, mw.LinearColor][] = [
+            [0.1, mw.LinearColor.green],
+            [1, mw.LinearColor.white],
+            [10, mw.LinearColor.blue]
         ];
         const funcCallTime: Map<string, number> = new Map();
         const funcNameBindNumber: Map<string, number> = new Map();
         const funcCallTotalNum: Map<string, number> = new Map();
         const checkUpdate = false;
         export function attachFuncCallNum<T extends { new(...args: any[]): {} }>(clsObj: T) {
-            if (!openLog) {
-                return;
-            }
             let proto = clsObj.prototype;
             const selfKeys = Reflect.ownKeys(proto);
             let base = Object.getPrototypeOf(proto)
@@ -294,7 +294,7 @@ namespace InUIDebug {
                         const donum = funcCallTotalNum.get(funcClsName) + 1;
                         funcCallTotalNum.set(funcClsName, donum);
                         const svTime = alltime / donum;
-                        let color: Type.LinearColor = Type.LinearColor.red;
+                        let color: mw.LinearColor = mw.LinearColor.red;
                         for (const [t, c] of colorLevel) {
                             if (alltime < t) {
                                 color = c;
@@ -311,7 +311,6 @@ namespace InUIDebug {
             return clsObj;
         }
         export function attachFuncCallStaticFunc() {
-            if (!openLog) { return; }
             return function (target: any, propertyRey: string, description: PropertyDescriptor) {
                 const func = description.value;
                 if (typeof func === "function") {
@@ -330,7 +329,7 @@ namespace InUIDebug {
                         const donum = funcCallTotalNum.get(funcClsName) + 1;
                         funcCallTotalNum.set(funcClsName, donum);
                         const svTime = alltime / donum;
-                        let color: Type.LinearColor = Type.LinearColor.red;
+                        let color: mw.LinearColor = mw.LinearColor.red;
                         for (const [t, c] of colorLevel) {
                             if (alltime < t) {
                                 color = c;
@@ -344,41 +343,118 @@ namespace InUIDebug {
                 }
             }
         }
+
+        export function simpleCallQueue<T extends { new(...args: any[]): {} }>(clsObj: T) {
+            let proto = clsObj.prototype;
+            const selfKeys = Reflect.ownKeys(proto);
+            let base = Object.getPrototypeOf(proto)
+            const baseKeys = Reflect.ownKeys(base);
+            const funcs = new Set<string>();
+            selfKeys.concat(baseKeys).filter(key => {
+                if (typeof key === "string") {
+                    let isfunc = false;
+                    try {
+                        isfunc = typeof proto[key] === "function";
+
+                    } catch (error) {
+                        isfunc = true;
+                    }
+                    return isfunc;
+                }
+                return false;
+            }).forEach(key => {
+                if (key.toString().toLowerCase().includes("update")) {
+                    if (checkUpdate) {
+                        funcs.add(key as string);
+                    }
+                }
+                else {
+                    funcs.add(key as string);
+                }
+            })
+            funcs.forEach(funcName => {
+                const isGet = !!Object.getOwnPropertyDescriptor(clsObj.prototype, funcName)?.get;
+                const isSet = !!Object.getOwnPropertyDescriptor(clsObj.prototype, funcName)?.set;
+                if (isGet || isSet) {
+                    console.error(`hym!!! ${clsObj.name}.${funcName.toString()} isget:${isGet} | isset:${isSet}`);
+                    return;
+                }
+                let func: any;
+                try {
+
+                    func = clsObj.prototype[funcName];
+                } catch (error) {
+                    console.error(`hym!!! ${clsObj.prototype}.${funcName}`)
+                    return;
+                }
+                if (typeof func === "function") {
+                    const funcClsName = `${clsObj.name}.${funcName.toString()}`
+
+                    clsObj.prototype[funcName] = function (...args: any[]) {
+                        // const beginTime = Date.now();
+                        const ret = func.call(this, ...args);
+                        // const passTime = Date.now() - beginTime;
+                        // const total = (funcCallTime.get(funcClsName) ? funcCallTime.get(funcClsName) : 0) + passTime;
+                        // funcCallTime.set(funcClsName, total);
+
+                        // const alltime = (funcCallTime.get(funcClsName) * 0.001);
+                        // if (!funcCallTotalNum.has(funcClsName)) {
+                        //     funcCallTotalNum.set(funcClsName, 0);
+                        // }
+                        // const donum = funcCallTotalNum.get(funcClsName) + 1;
+                        // funcCallTotalNum.set(funcClsName, donum);
+                        // const svTime = alltime / donum;
+                        let color: mw.LinearColor = mw.LinearColor.black;
+                        // for (const [t, c] of colorLevel) {
+                        //     if (alltime < t) {
+                        //         color = c;
+                        //         break;
+                        //     }
+                        // }
+                        let n = log(`call>> ${funcClsName} `);
+                        // funcNameBindNumber.set(funcClsName, n);
+                        return ret;
+                    }
+                }
+            })
+
+            return clsObj;
+        }
     }
 
     /**服务器调用的打印 */
     export namespace LinkServer {
         const EVENTRPC = "EVENT_UIDEBUG_SERVERCALLCLIENT";
         export const EVENTSERVERHACKCONSOLE = "EVENT_EVENTSERVERHACKCONSOLE";
-        const serverlogColor = new Type.LinearColor(1, 0, 1, 1);
+        const serverlogColor = new mw.LinearColor(1, 0, 1, 1);
         let inited = false
         /**初始化 */
         export function serverinit() {
             if (inited) { return; }
             inited = true;
             if (SystemUtil.isClient()) {
-                Events.addServerListener(EVENTRPC, (msg: string) => {
+                mw.Event.addServerListener(EVENTRPC, (msg: string) => {
                     log(msg, serverlogColor);
                 });
             }
             if (SystemUtil.isServer()) {
-                Events.addClientListener(EVENTSERVERHACKCONSOLE, () => {
+                mw.Event.addClientListener(EVENTSERVERHACKCONSOLE, () => {
                     hackConsole();
                 })
             }
         }
 
-        export function slog(msg: string, player?: Gameplay.Player) {
+        export function slog(msg: string, player?: mw.Player) {
             if (SystemUtil.isServer()) {
                 if (!hackLog) {
                     console.log(msg);
                 }
                 if (player != null) {
-                    Events.dispatchToClient(player, EVENTRPC, msg);
+                    mw.Event.dispatchToClient(player, EVENTRPC, msg);
                 }
                 else {
-                    Gameplay.getAllPlayers().forEach(p => {
-                        Events.dispatchToClient(p, EVENTRPC, msg);
+                    mw.Player.getAllPlayers().forEach(p => {
+                        mw.Event.dispatchToClient(p, EVENTRPC, msg);
                     }
                     )
                 }
@@ -390,14 +466,14 @@ namespace InUIDebug {
     namespace Data {
         export let uiObject: ErrorMessageUI = null;
         export let txtSize: number = 15
-        export const msgTxts: [number, UI.TextBlock][] = [];
+        export const msgTxts: [number, mw.TextBlock][] = [];
         let TxtWidth: number = 960
         let alwaysScrollEnd: boolean = true;
         /**生成控制台UI对象 */
         export function setUIClass() {
             uiObject = createMsgUI();
-            uiObject.uiObject.zOrder = -1000;
-            UI.UIManager.instance.canvas.addChild(uiObject.uiObject);
+            uiObject.uiObject.zOrder = 999999;
+            mw.UIService.canvas.addChild(uiObject.uiObject);
             uiObject.setVisible(false);
         }
         function createMsgUI(): ErrorMessageUI {
@@ -408,12 +484,12 @@ namespace InUIDebug {
                 setVisible: null
             }
             //根节点和UI对象
-            const screen = Util.WindowUtil.getViewportSize();
-            const root = UI.UserWidgetPrefab.newObject();
+            const screen = mw.WindowUtil.getViewportSize();
+            const root = mw.UserWidgetPrefab.newObject();
             const height = screen.y / 3;
             const width = screen.x / 2;
-            const size = new Type.Vector(width, height);
-            const pos = new Type.Vector(screen.x / 2 - width / 2, screen.y - height);
+            const size = new mw.Vector(width, height);
+            const pos = new mw.Vector(screen.x / 2 - width / 2, screen.y - height);
             const dragHeight = 40;
             const enterwidth = 100;
             const inputheight = 60;
@@ -422,38 +498,38 @@ namespace InUIDebug {
             TxtWidth = width - 10;
 
             root.size = screen
-            root.rootContent = UI.Canvas.newObject();
+            root.rootContent = mw.Canvas.newObject();
             root.rootContent.size = size;
             root.rootContent.position = pos;
-            root.addToViewport(UI.UILayerScene);
+            root.addToViewport(mw.UILayerScene);
             ret.uiObject = root;
             ret.rootCanvas = root.rootContent;
             //滚动区背景
-            const scrollBg = UI.Image.newObject(ret.rootCanvas);
-            scrollBg.size = new Type.Vector2(size.x, size.y - dragHeight - inputheight);
-            scrollBg.position = new Type.Vector(0, dragHeight);
-            scrollBg.imageColor = new Type.LinearColor(0, 0, 0, 0.5);
+            const scrollBg = mw.Image.newObject(ret.rootCanvas);
+            scrollBg.size = new mw.Vector2(size.x, size.y - dragHeight - inputheight);
+            scrollBg.position = new mw.Vector(0, dragHeight);
+            scrollBg.imageColor = new mw.LinearColor(0, 0, 0, 0.5);
             //滚动区
-            ret.messageScroll = UI.ScrollBox.newObject(ret.rootCanvas);
-            ret.messageScroll.position = new Type.Vector(0, dragHeight);
-            ret.messageScroll.size = new Type.Vector2(size.x, size.y - dragHeight - inputheight);
+            ret.messageScroll = mw.ScrollBox.newObject(ret.rootCanvas);
+            ret.messageScroll.position = new mw.Vector(0, dragHeight);
+            ret.messageScroll.size = new mw.Vector2(size.x, size.y - dragHeight - inputheight);
             ret.setVisible = (active: boolean) => {
-                ret.rootCanvas.visibility = active ? UI.SlateVisibility.SelfHitTestInvisible : UI.SlateVisibility.Collapsed;
+                ret.rootCanvas.visibility = active ? mw.SlateVisibility.SelfHitTestInvisible : mw.SlateVisibility.Collapsed;
             }
-            ret.messageScroll.scrollBarVisibility = UI.SlateVisibility.Collapsed;
+            ret.messageScroll.scrollBarVisibility = mw.SlateVisibility.Collapsed;
 
 
             //拖拽条
-            const dragBtn = UI.Button.newObject(ret.rootCanvas);
-            dragBtn.size = new Type.Vector(size.x - dragHeight * 2, dragHeight);
-            dragBtn.position = new Type.Vector(0, 0);
+            const dragBtn = mw.Button.newObject(ret.rootCanvas);
+            dragBtn.size = new mw.Vector(size.x - dragHeight * 2, dragHeight);
+            dragBtn.position = new mw.Vector(0, 0);
             let dragID = null;
             dragBtn.onPressed.add(() => {
-                let beforeCursorPos = UI.getMousePositionOnViewport();//鼠标位置
-                let offset = Type.Vector2.subtract(ret.rootCanvas.position, beforeCursorPos);//偏移量
+                let beforeCursorPos = mw.getMousePositionOnViewport();//鼠标位置
+                let offset = mw.Vector2.subtract(ret.rootCanvas.position, beforeCursorPos);//偏移量
                 dragID = setInterval(() => {
-                    let cursorPos = UI.getMousePositionOnViewport();//鼠标位置
-                    ret.rootCanvas.position = Type.Vector2.add(offset, cursorPos);
+                    let cursorPos = mw.getMousePositionOnViewport();//鼠标位置
+                    ret.rootCanvas.position = mw.Vector2.add(offset, cursorPos);
                 }, 1);
             })
             dragBtn.onReleased.add(() => {
@@ -461,50 +537,50 @@ namespace InUIDebug {
             })
             //新打印文本时滚动到最后
             {
-                const imgbg = UI.Image.newObject(ret.rootCanvas);
-                imgbg.size = new Type.Vector(dragHeight, dragHeight);
-                imgbg.position = new Type.Vector2(size.x - dragHeight - 150, 0 - dragHeight);
+                const imgbg = mw.Image.newObject(ret.rootCanvas);
+                imgbg.size = new mw.Vector(dragHeight, dragHeight);
+                imgbg.position = new mw.Vector2(size.x - dragHeight - 150, 0 - dragHeight);
                 imgbg.imageGuid = "157550";
-                const toggle = UI.Button.newObject(ret.rootCanvas);
-                toggle.size = new Type.Vector(dragHeight, dragHeight);
-                toggle.position = new Type.Vector2(imgbg.position.x, imgbg.position.y);
+                const toggle = mw.Button.newObject(ret.rootCanvas);
+                toggle.size = new mw.Vector(dragHeight, dragHeight);
+                toggle.position = new mw.Vector2(imgbg.position.x, imgbg.position.y);
                 toggle.normalImageGuid = "88559";
-                const noSelectColor = new Type.LinearColor(1, 1, 1, 0);
-                const selectColor = new Type.LinearColor(1, 1, 1, 1);
+                const noSelectColor = new mw.LinearColor(1, 1, 1, 0);
+                const selectColor = new mw.LinearColor(1, 1, 1, 1);
                 toggle.normalImageColor = selectColor;
                 toggle.onClicked.add(() => {
                     alwaysScrollEnd = !alwaysScrollEnd;
                     toggle.normalImageColor = alwaysScrollEnd ? selectColor : noSelectColor;
                 });
                 //文本提示
-                const txt = UI.TextBlock.newObject(ret.rootCanvas);
+                const txt = mw.TextBlock.newObject(ret.rootCanvas);
                 txt.text = "始终滚动到最后";
-                txt.fontColor = Type.LinearColor.black;
-                txt.outlineColor = Type.LinearColor.white;
+                txt.fontColor = mw.LinearColor.black;
+                txt.outlineColor = mw.LinearColor.white;
                 txt.outlineSize = 1;
                 txt.fontSize = 15;
-                txt.position = new Type.Vector2(imgbg.position.x - 150, imgbg.position.y + 5);
+                txt.position = new mw.Vector2(imgbg.position.x - 150, imgbg.position.y + 5);
             }
 
             //搜索框
-            const findInput = UI.InputBox.newObject(ret.rootCanvas);
-            findInput.size = new Type.Vector(dragBtn.size.x / 4, dragBtn.size.y - 5);
-            findInput.position = new Type.Vector(dragBtn.size.x - dragBtn.size.x / 4 - dragHeight, 2.5);
-            findInput.contentColor = Type.LinearColor.black;
-            findInput.fontColor = Type.LinearColor.white;
+            const findInput = mw.InputBox.newObject(ret.rootCanvas);
+            findInput.size = new mw.Vector(dragBtn.size.x / 4, dragBtn.size.y - 5);
+            findInput.position = new mw.Vector(dragBtn.size.x - dragBtn.size.x / 4 - dragHeight, 2.5);
+            findInput.contentColor = mw.LinearColor.black;
+            findInput.fontColor = mw.LinearColor.white;
             findInput.textLengthLimit = 99;
             findInput.hintString = "输入关键字";
             findInput.fontSize = 15;
             //搜索按钮
-            const findBtn = UI.StaleButton.newObject(ret.rootCanvas);
-            findBtn.size = new Type.Vector(dragHeight, dragHeight);
-            findBtn.position = new Type.Vector(dragBtn.size.x - dragHeight, 0);
+            const findBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            findBtn.size = new mw.Vector(dragHeight, dragHeight);
+            findBtn.position = new mw.Vector(dragBtn.size.x - dragHeight, 0);
             findBtn.text = "";
             findBtn.normalImageGuid = "132756";
-            findBtn.normalImageColor = Type.LinearColor.black;
+            findBtn.normalImageColor = mw.LinearColor.black;
             findBtn.fontSize = 15;
-            findBtn.fontColor = Type.LinearColor.black;
-            let scrollTween: TweenUtil.Tween<{ y: number }> = null;
+            findBtn.fontColor = mw.LinearColor.black;
+            let scrollTween: mw.Tween<{ y: number }> = null;
             let beforeFindInfo: { txt: string, index: number } = { txt: null, index: -1 }
             findBtn.onClicked.add(() => {
                 if (scrollTween) { scrollTween.stop(); }
@@ -520,50 +596,50 @@ namespace InUIDebug {
                 }
                 beforeFindInfo.index = findindex;
                 const findpos = findArr[findindex][0];
-                scrollTween = new TweenUtil.Tween({ y: ret.messageScroll.scrollOffset }).to({ y: findpos }, 500).onUpdate((obj) => {
+                scrollTween = new mw.Tween({ y: ret.messageScroll.scrollOffset }).to({ y: findpos }, 500).onUpdate((obj) => {
                     ret.messageScroll.scrollOffset = obj.y;
                 }).onComplete(() => { scrollTween = null }).start();
             });
 
             //清除按钮
-            const clearBtn = UI.StaleButton.newObject(ret.rootCanvas);
-            clearBtn.size = new Type.Vector(dragHeight, dragHeight);
-            clearBtn.position = new Type.Vector(size.x - dragHeight * 2, 0);
+            const clearBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            clearBtn.size = new mw.Vector(dragHeight, dragHeight);
+            clearBtn.position = new mw.Vector(size.x - dragHeight * 2, 0);
             clearBtn.text = "C";
             clearBtn.fontSize = 15;
-            clearBtn.fontColor = Type.LinearColor.black;
+            clearBtn.fontColor = mw.LinearColor.black;
             clearBtn.onClicked.add(() => {
                 UIObj.clear();
             })
 
             //关闭按钮
-            const closeBtn = UI.StaleButton.newObject(ret.rootCanvas);
-            closeBtn.size = new Type.Vector(dragHeight, dragHeight);
-            closeBtn.position = new Type.Vector(size.x - dragHeight, 0);
+            const closeBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            closeBtn.size = new mw.Vector(dragHeight, dragHeight);
+            closeBtn.position = new mw.Vector(size.x - dragHeight, 0);
             closeBtn.text = "X";
             closeBtn.fontSize = 15;
-            closeBtn.fontColor = Type.LinearColor.red;
+            closeBtn.fontColor = mw.LinearColor.red;
             closeBtn.onClicked.add(() => {
                 UIObj.close();
             })
             //输入框
 
-            const input = UI.InputBox.newObject(ret.rootCanvas);
-            input.size = new Type.Vector(inputwidth, inputheight);
-            input.position = new Type.Vector(0, size.y - inputheight);
+            const input = mw.InputBox.newObject(ret.rootCanvas);
+            input.size = new mw.Vector(inputwidth, inputheight);
+            input.position = new mw.Vector(0, size.y - inputheight);
             input.fontSize = 20;
             input.textLengthLimit = 100;
             input.hintString = "输入指令";
             //指令确认按钮
-            const inputBtn = UI.StaleButton.newObject(ret.rootCanvas);
-            inputBtn.size = new Type.Vector(enterwidth, inputheight);
-            inputBtn.position = new Type.Vector(inputwidth, size.y - inputheight);
+            const inputBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            inputBtn.size = new mw.Vector(enterwidth, inputheight);
+            inputBtn.position = new mw.Vector(inputwidth, size.y - inputheight);
             inputBtn.text = "确认";
             inputBtn.fontSize = 20;
             inputBtn.onClicked.add(() => {
                 const ps = input.text.split(" ");
                 const iscmd = ps.length > 0 && ps[0].startsWith('-') && ps[0].length >= 2;
-                log(input.text, iscmd ? Type.LinearColor.green : Type.LinearColor.white);
+                log(input.text, iscmd ? mw.LinearColor.green : mw.LinearColor.white);
                 if (iscmd) {
                     const action = cmdActions.get(ps[0].substring(1));
                     if (action) {
@@ -578,19 +654,19 @@ namespace InUIDebug {
         const usedKeys: number[] = [];
         export let lastUseIndex: number = -1;
         export let nextPosY: number = 0;
-        export function getTxtBlock(txt: string, color: Type.LinearColor, size: number, useKey: number = -1): number {
+        export function getTxtBlock(txt: string, color: mw.LinearColor, size: number, useKey: number = -1): number {
             let index: number = 0;
-            let txtObj: UI.TextBlock = null;
+            let txtObj: mw.TextBlock = null;
             if (lastUseIndex >= (msgTxts.length - 1)) {//需要新建文本对象
 
-                txtObj = UI.TextBlock.newObject(uiObject.rootCanvas);
+                txtObj = mw.TextBlock.newObject(uiObject.rootCanvas);
                 uiObject.messageScroll.addChild(txtObj);
-                txtObj.textHorizontalLayout = UI.UITextHorizontalLayout.AutoWarpText;
-                txtObj.size = new Type.Vector(TxtWidth, 1);
-                // ret.position = new Type.Vector(0, nextPosY);
+                txtObj.textHorizontalLayout = mw.UITextHorizontalLayout.AutoWarpText;
+                txtObj.size = new mw.Vector(TxtWidth, 1);
+                // ret.position = new mw.Vector(0, nextPosY);
                 txtObj.lineHeightPercentage = 0.7
                 txtObj.fontSize = txtSize;
-                txtObj.outlineColor = Type.LinearColor.black;
+                txtObj.outlineColor = mw.LinearColor.black;
                 txtObj.outlineSize = 1;
                 msgTxts.push([0, txtObj]);
                 lastUseIndex = msgTxts.length - 1;
@@ -604,8 +680,8 @@ namespace InUIDebug {
             txtObj.fontSize = size;
             txtObj.text = txt;
 
-            txtObj.size = new Type.Vector(TxtWidth, txtObj.textHeight + 10);
-            txtObj.position = new Type.Vector(0, nextPosY);
+            txtObj.size = new mw.Vector(TxtWidth, txtObj.textHeight + 10);
+            txtObj.position = new mw.Vector(0, nextPosY);
             msgTxts[index][0] = nextPosY;
             nextPosY = txtObj.size.y + nextPosY;
             // lastPosY += ret.size.y;
@@ -619,14 +695,18 @@ namespace InUIDebug {
             return key;
         }
     }
-}
-//默认实现一个截断console的打印指令
-InUIDebug.cmdActions.set("hackConsole", (ss) => {
-    if (ss[0] == "s") {
-        Events.dispatchToServer(InUIDebug.LinkServer.EVENTSERVERHACKCONSOLE);
+
+    export function openAll() {
+        openLog = true;
+        LinkServer.serverinit();
+        hackConsole();
+        if (SystemUtil.isClient()) {
+
+            RegisterInput();
+            UIObj.open()
+        }
     }
-    InUIDebug.hackConsole();
-});
+}
 
 
 declare var UIDebug: {
@@ -652,9 +732,9 @@ declare var UIDebug: {
         open: () => void,
     }
     /**进行一行打印,如果是服务器调用，会让所有玩家打印 */
-    log: (msg: string, color?: Type.LinearColor, key?: number, size?: number) => number,
+    log: (msg: string, color?: mw.LinearColor, key?: number, size?: number) => number,
     /**注册手势打开控制台,以中心为起始,参数为结束滑到的点位,如果不加参数,默认依次是相对屏幕正中的:下,上,左,右 */
-    RegisterInput: (...touchPoints: Type.Vector2[]) => void,
+    RegisterInput: (...touchPoints: mw.Vector2[]) => void,
     /**装饰器 */
     Decorator: {
         /**装饰到函数上，可以检查函数执行报错并打印出来 */
@@ -663,13 +743,17 @@ declare var UIDebug: {
         attachFuncCallNum: <T extends { new(...args: any[]): {} }>(clsObj: T) => T,
         /**装饰到静态函数，可以查看此静态函数执行次数 */
         attachFuncCallStaticFunc: () => void,
+        /**简单函数调用打印 */
+        simpleCallQueue: <T extends { new(...args: any[]): {} }>(clsObj: T) => T,
     },
     /**服务器相关操作 */
     LinkServer: {
         /**如果要让服务器也能使用此打印，需要执行 */
         serverinit: () => void,
         /**服务器上的打印调用，如果没有player参数，则会让所有玩家打印 */
-        slog: (msg: string, player?: Gameplay.Player) => void,
+        slog: (msg: string, player?: mw.Player) => void,
     }
+    /**初始化调用，开启所有 */
+    openAll: () => void
 };
 globalThis.UIDebug = InUIDebug;

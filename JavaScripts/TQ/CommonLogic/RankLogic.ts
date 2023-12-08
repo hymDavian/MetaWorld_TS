@@ -31,7 +31,7 @@ export class RankLogic<T> {
 
     /**注册 收到排行榜后执行排行数据 */
     private clientInit() {
-        let eventFunc = this.C2S ? Events.addServerListener : Events.addLocalListener;
+        let eventFunc = this.C2S ? mw.Event.addServerListener : mw.Event.addLocalListener;
 
         eventFunc(`${EVENT_RANK_REP}_${this.infoTypeName}`, (infos: T[]) => {
             if (this.uiAct) {
@@ -101,14 +101,14 @@ export class RankLogic<T> {
     /**注册 收到请求后创建并发送排行数据 */
     private serverInit() {
         if (this.C2S) {
-            Events.addClientListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, (player) => {
+            mw.Event.addClientListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, (player) => {
                 this.sendRank(player);
             })
         }
         else {
-            Events.addLocalListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, () => {
+            mw.Event.addLocalListener(`${EVENT_RANK_REQ}_${this.infoTypeName}`, () => {
                 let data: T[] = this.dataAct ? this.dataAct() : [];
-                Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+                mw.Event.dispatchToLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
             })
         }
     }
@@ -116,45 +116,45 @@ export class RankLogic<T> {
 
     /**[client] 主动请求刷新排行榜 */
     public requestRank(): void {
-        if (Util.SystemUtil.isClient()) {
+        if (SystemUtil.isClient()) {
             if (this.C2S) {
-                Events.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
+                mw.Event.dispatchToServer(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
             }
             else {
-                Events.dispatchLocal(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
+                mw.Event.dispatchToLocal(`${EVENT_RANK_REQ}_${this.infoTypeName}`);
             }
 
         }
     }
 
     /**主动发送排行榜数据给对应客户端,C2C时主动发送给自身，pid无效 */
-    public sendRank(pid: number | Gameplay.Player, data?: T[]) {
+    public sendRank(pid: number | mw.Player, data?: T[]) {
         if (!data) {
             data = this.dataAct ? this.dataAct() : [];
         }
         if (data.length <= 0) {
             return;
         }
-        if (this.C2S && Util.SystemUtil.isServer()) {
-            let p: Gameplay.Player = (pid instanceof Gameplay.Player) ? pid : Gameplay.getPlayer(pid);
+        if (this.C2S && SystemUtil.isServer()) {
+            let p: mw.Player = (pid instanceof mw.Player) ? pid : mw.Player.getPlayer(pid);
 
-            Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+            mw.Event.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
         }
         else {
-            Events.dispatchLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+            mw.Event.dispatchToLocal(`${EVENT_RANK_REP}_${this.infoTypeName}`, data);
         }
     }
 
     /**[server] 仅服务器调用，给所有玩家发送排行数据*/
     public sendAllRank(data?: T[]) {
-        if (!this.C2S || Util.SystemUtil.isClient()) { return; }
+        if (!this.C2S || SystemUtil.isClient()) { return; }
 
         if (!data) {
             data = this.dataAct ? this.dataAct() : [];
         }
 
-        Gameplay.getAllPlayers().forEach(p => {
-            Events.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
+        mw.Player.getAllPlayers().forEach(p => {
+            mw.Event.dispatchToClient(p, `${EVENT_RANK_REP}_${this.infoTypeName}`, data);
         });
 
 
