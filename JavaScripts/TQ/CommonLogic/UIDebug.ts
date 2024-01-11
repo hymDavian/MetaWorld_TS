@@ -159,6 +159,9 @@ namespace InUIDebug {
         if (!msg || msg.length <= 0) {
             return;
         }
+        if (msg.includes("TypeError")) {
+            color = mw.LinearColor.red;
+        }
         UIObj.open();
         if (maxLogNum > 0 && Data.lastUseIndex >= maxLogNum) {
             UIObj.clear();
@@ -504,13 +507,31 @@ namespace InUIDebug {
             root.addToViewport(mw.UILayerScene);
             ret.uiObject = root;
             ret.rootCanvas = root.rootContent;
+
+            const innerCanvas = mw.Canvas.newObject(ret.rootCanvas);
+            innerCanvas.size = ret.rootCanvas.size;
+            innerCanvas.position = mw.Vector2.zero;
+
+            //切换显隐按钮
+            const togBtn = mw.Button.newObject(ret.rootCanvas);
+            togBtn.size = new mw.Vector2(50, 50);
+            togBtn.position = new mw.Vector2(-50, dragHeight);
+            togBtn.normalImageColor = mw.LinearColor.red;
+            let tohide: boolean = false;
+            togBtn.onClicked.add(() => {
+                tohide = !tohide
+                innerCanvas.visibility = tohide ? SlateVisibility.Collapsed : SlateVisibility.SelfHitTestInvisible;
+            })
+
             //滚动区背景
-            const scrollBg = mw.Image.newObject(ret.rootCanvas);
+            const scrollBg = mw.Image.newObject(innerCanvas);
             scrollBg.size = new mw.Vector2(size.x, size.y - dragHeight - inputheight);
             scrollBg.position = new mw.Vector(0, dragHeight);
             scrollBg.imageColor = new mw.LinearColor(0, 0, 0, 0.5);
+
+
             //滚动区
-            ret.messageScroll = mw.ScrollBox.newObject(ret.rootCanvas);
+            ret.messageScroll = mw.ScrollBox.newObject(innerCanvas);
             ret.messageScroll.position = new mw.Vector(0, dragHeight);
             ret.messageScroll.size = new mw.Vector2(size.x, size.y - dragHeight - inputheight);
             ret.setVisible = (active: boolean) => {
@@ -520,7 +541,7 @@ namespace InUIDebug {
 
 
             //拖拽条
-            const dragBtn = mw.Button.newObject(ret.rootCanvas);
+            const dragBtn = mw.Button.newObject(innerCanvas);
             dragBtn.size = new mw.Vector(size.x - dragHeight * 2, dragHeight);
             dragBtn.position = new mw.Vector(0, 0);
             let dragID = null;
@@ -537,11 +558,11 @@ namespace InUIDebug {
             })
             //新打印文本时滚动到最后
             {
-                const imgbg = mw.Image.newObject(ret.rootCanvas);
+                const imgbg = mw.Image.newObject(innerCanvas);
                 imgbg.size = new mw.Vector(dragHeight, dragHeight);
                 imgbg.position = new mw.Vector2(size.x - dragHeight - 150, 0 - dragHeight);
                 imgbg.imageGuid = "157550";
-                const toggle = mw.Button.newObject(ret.rootCanvas);
+                const toggle = mw.Button.newObject(innerCanvas);
                 toggle.size = new mw.Vector(dragHeight, dragHeight);
                 toggle.position = new mw.Vector2(imgbg.position.x, imgbg.position.y);
                 toggle.normalImageGuid = "88559";
@@ -553,7 +574,7 @@ namespace InUIDebug {
                     toggle.normalImageColor = alwaysScrollEnd ? selectColor : noSelectColor;
                 });
                 //文本提示
-                const txt = mw.TextBlock.newObject(ret.rootCanvas);
+                const txt = mw.TextBlock.newObject(innerCanvas);
                 txt.text = "始终滚动到最后";
                 txt.fontColor = mw.LinearColor.black;
                 txt.outlineColor = mw.LinearColor.white;
@@ -563,7 +584,7 @@ namespace InUIDebug {
             }
 
             //搜索框
-            const findInput = mw.InputBox.newObject(ret.rootCanvas);
+            const findInput = mw.InputBox.newObject(innerCanvas);
             findInput.size = new mw.Vector(dragBtn.size.x / 4, dragBtn.size.y - 5);
             findInput.position = new mw.Vector(dragBtn.size.x - dragBtn.size.x / 4 - dragHeight, 2.5);
             findInput.contentColor = mw.LinearColor.black;
@@ -572,7 +593,7 @@ namespace InUIDebug {
             findInput.hintString = "输入关键字";
             findInput.fontSize = 15;
             //搜索按钮
-            const findBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            const findBtn = mw.StaleButton.newObject(innerCanvas);
             findBtn.size = new mw.Vector(dragHeight, dragHeight);
             findBtn.position = new mw.Vector(dragBtn.size.x - dragHeight, 0);
             findBtn.text = "";
@@ -602,7 +623,7 @@ namespace InUIDebug {
             });
 
             //清除按钮
-            const clearBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            const clearBtn = mw.StaleButton.newObject(innerCanvas);
             clearBtn.size = new mw.Vector(dragHeight, dragHeight);
             clearBtn.position = new mw.Vector(size.x - dragHeight * 2, 0);
             clearBtn.text = "C";
@@ -613,7 +634,7 @@ namespace InUIDebug {
             })
 
             //关闭按钮
-            const closeBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            const closeBtn = mw.StaleButton.newObject(innerCanvas);
             closeBtn.size = new mw.Vector(dragHeight, dragHeight);
             closeBtn.position = new mw.Vector(size.x - dragHeight, 0);
             closeBtn.text = "X";
@@ -624,14 +645,14 @@ namespace InUIDebug {
             })
             //输入框
 
-            const input = mw.InputBox.newObject(ret.rootCanvas);
+            const input = mw.InputBox.newObject(innerCanvas);
             input.size = new mw.Vector(inputwidth, inputheight);
             input.position = new mw.Vector(0, size.y - inputheight);
             input.fontSize = 20;
             input.textLengthLimit = 100;
             input.hintString = "输入指令";
             //指令确认按钮
-            const inputBtn = mw.StaleButton.newObject(ret.rootCanvas);
+            const inputBtn = mw.StaleButton.newObject(innerCanvas);
             inputBtn.size = new mw.Vector(enterwidth, inputheight);
             inputBtn.position = new mw.Vector(inputwidth, size.y - inputheight);
             inputBtn.text = "确认";

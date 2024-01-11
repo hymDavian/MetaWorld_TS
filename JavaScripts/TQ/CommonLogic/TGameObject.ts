@@ -9,7 +9,7 @@ export namespace TEGameObject {
     }
 
     //隐藏children这个数组被访问的函数符号
-    type hideArrayFunc = {
+    type hideArrayKeys = {
         pop, push, concat, reverse, shift, sort, splice, unshift
     }
 
@@ -33,7 +33,7 @@ export namespace TEGameObject {
         /**物体使用资源guid */
         get assetId(): string;
         /**子物体组，无法直接执行数组的增删操作 */
-        readonly children: Omit<Array<TEGameObject1<any>>, keyof hideArrayFunc>;
+        readonly children: Omit<Array<TEGameObject1<any>>, keyof hideArrayKeys>;
         /**根据名称查找子物体 */
         getChildByName(name: string);
         /**自身显示状况 */
