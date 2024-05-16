@@ -1,8 +1,10 @@
-if (!Array.prototype.add) {
-    Object.defineProperty(Array.prototype, 'add', {
+if (!Array.prototype.add_norepeat) {
+    Object.defineProperty(Array.prototype, 'add_norepeat', {
         value(item) {
-            this.push(item);
-            return this;
+            if (this.indexOf(item) === -1) {
+                this.push(item);
+            }
+            return item;
         },
         enumerable: false
     });
@@ -18,26 +20,6 @@ if (!Array.prototype.remove) {
     });
 }
 
-if (!Array.prototype.first) {
-    Object.defineProperty(Array.prototype, 'first', {
-        value(count) {
-            if (count == undefined) {
-                if (this.length > 0) {
-                    return this[0];
-                }
-                else return null;
-            }
-            else {
-                var ret = [];
-                for (var i = 0; i < Math.min(count, this.length); i++) {
-                    ret.add(this[i]);
-                }
-                return ret;
-            }
-        },
-        enumerable: false
-    });
-}
 
 if (!Array.prototype.last) {
     Object.defineProperty(Array.prototype, 'last', {
@@ -171,6 +153,45 @@ if (!Array.prototype.randomRemove) {
     });
 }
 
+if (!Array.prototype.union) {
+    Object.defineProperty(Array.prototype, 'union', {
+        value(other: any[]) {
+            const ret = this.slice();
+            if (other == null || other.length <= 0) { return ret; }
+            for (let v of other) {
+                if (ret.indexOf(v) === -1) {
+                    ret.push(v);
+                }
+            }
+            return ret;
+        }
+    });
+}
+
+if (!Array.prototype.insert) {
+    Object.defineProperty(Array.prototype, "insert", {
+        value(index: number, val: any) {
+            if (index < 0) {
+                this.unshift(val);
+            }
+            else if (index >= this.length - 1) {//索引是最后一位或以上
+                this.push(val);
+            }
+            else {
+                const length = this.length
+                let oldval = this[index + 1];
+                this[index + 1] = val;
+                for (let i = index + 2; i < length + 1; i++) {
+                    let temp = this[i];
+                    this[i] = oldval;
+                    oldval = temp;
+                    // nexttemp = this[i+1];
+                }
+            }
+        }
+    });
+}
+
 interface Array<T> {
     /**
      * 删除数组一个元素并返回这个元素
@@ -200,19 +221,11 @@ interface Array<T> {
     has(key: any, value?: any): boolean
 
     /**
-     * 添加一个元素并返回这个元素
+     * 添加一个元素并返回这个元素,不会重复添加
      */
-    add(val: T): T
+    add_norepeat(val: T): T
 
-    /**
-     * 返回第一个元素
-     */
-    first(): T;
 
-    /**
-     * 返回前 count 个元素
-     */
-    first(count: number): T;
 
     /**
      * 返回最后一个元素
@@ -223,12 +236,10 @@ interface Array<T> {
      * 重新设置这个数组
      */
     set(arr: T[]): T[];
+    /**与另一个同类数组的去重并集(不改原数组返回新数组) */
+    union(other: T[]): T[];
+    /**从目标索引向后一位插入，如果这个索引为负数或超过最长，会加入到第一个或最后一个 */
+    insert(index: number, val: T);
 }
 
-interface Math {
-    clamp(value: number, min: number, max: number): number;
-}
-Math.clamp = function (value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
-}
 

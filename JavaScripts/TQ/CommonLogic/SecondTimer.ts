@@ -1,3 +1,4 @@
+import { TAction } from "./TAction";
 
 
 export class SecondTimer {
@@ -28,4 +29,16 @@ export class SecondTimer {
         }
     }
 
+    public static addTaskByCondition(task: () => void, condition: () => boolean) {
+        if (condition()) {
+            task();
+            return;
+        }
+        let id = setInterval(() => {
+            if (condition()) {
+                task();
+                clearInterval(id);
+            }
+        }, 100);
+    }
 }

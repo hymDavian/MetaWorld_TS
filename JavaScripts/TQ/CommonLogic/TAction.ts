@@ -1,5 +1,5 @@
 type getarrps<T> = T extends [...infer _] ? _ : [T]
-class TAction<T> {
+export class TAction<T> {
     private readonly _callback: ((...ps: getarrps<T>) => void)[] = [];
 
     add(fn: (...ps: getarrps<T>) => void): void {
@@ -21,7 +21,7 @@ class TAction<T> {
     }
 
     remove(fn: (...ps: getarrps<T>) => void) {
-        for (let i = 0; i < this._callback.length; i++) {
+        for (let i = this._callback.length - 1; i >= 0; i--) {
             if (this._callback[i] == fn) {
                 this._callback.splice(i, 1);
                 return;
@@ -44,4 +44,3 @@ class TAction<T> {
 }
 
 
-(globalThis as any)["TAction"] = TAction;
