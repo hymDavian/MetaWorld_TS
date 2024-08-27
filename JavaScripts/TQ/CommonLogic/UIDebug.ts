@@ -98,6 +98,7 @@ namespace InUIDebug {
     }
     /**打印到内置控制台,返回文本ID。如果是服务器调用，则在所有客户端打印紫色文本，不会返回文本id */
     export function log(msg: string, color: mw.LinearColor = mw.LinearColor.white, key: number = null, size?: number): number {
+
         if (!hackLog) {
             console.log(msg);
         }
@@ -149,14 +150,20 @@ namespace InUIDebug {
 
     //实际的打印逻辑实现,避免调用截断console函数后的递归调用
     function innerLog(msg: string, color: mw.LinearColor = mw.LinearColor.white, key: number = null, size?: number) {
+        if (!msg || msg.length <= 0) {
+            return;
+        }
+        if (ignore.find(v => { return msg.includes(v) }) != null) {//There is a TextField where its content is out of the area
+            return;//含有忽略内容
+        }
+
+
         if (SystemUtil.isServer()) {
             LinkServer.slog(msg);
             return;
         }
+
         if (!openLog) {
-            return;
-        }
-        if (!msg || msg.length <= 0) {
             return;
         }
         if (msg.includes("TypeError")) {
@@ -727,6 +734,13 @@ namespace InUIDebug {
             UIObj.open()
         }
     }
+
+    /**忽略列表 */
+    let ignore: string[] = [];
+    export function addIgnore(...names: string[]) {
+        ignore = ignore || [];
+        ignore.push(...names);
+    }
 }
 
 
@@ -775,6 +789,9 @@ declare var UIDebug: {
         slog: (msg: string, player?: mw.Player) => void,
     }
     /**初始化调用，开启所有 */
-    openAll: () => void
+    openAll: () => void,
+
+    /**忽略带有匹配字符内容的打印 */
+    addIgnore: (...names: string[]) => void
 };
 globalThis.UIDebug = InUIDebug;
